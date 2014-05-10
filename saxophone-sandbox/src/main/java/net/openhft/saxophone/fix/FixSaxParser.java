@@ -28,6 +28,10 @@ public class FixSaxParser implements BytesSaxParser {
     }
 
     @Override
+    public void reset() {
+    }
+
+    @Override
     public void parse(Bytes bytes) {
         long limit = bytes.limit(), limit2 = limit;
         while (limit2 > bytes.position() && bytes.readByte(limit2 - 1) != FIELD_TERMINATOR)
