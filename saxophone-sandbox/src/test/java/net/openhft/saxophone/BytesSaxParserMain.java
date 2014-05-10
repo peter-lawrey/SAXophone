@@ -25,6 +25,10 @@ public class BytesSaxParserMain {
     public static void main(String... ignored) {
         BytesSaxParser parser = new BytesSaxParser() {
             @Override
+            public void reset() {
+            }
+
+            @Override
             public void parse(Bytes bytes) {
                 while (bytes.remaining() > 0)
                     System.out.print((char) bytes.readByte());
