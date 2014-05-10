@@ -14,20 +14,14 @@
  * limitations under the License.
  */
 
-package net.openhft.saxophone;
+package net.openhft.saxophone.json;
 
-import net.openhft.lang.io.Bytes;
+public interface JsonHandler {
+    void startOfObject();
 
-public interface BytesSaxParser {
-    /**
-     * reset any state
-     */
-    void reset();
+    void startOfArray();
 
-    /**
-     * Parse as much of the Bytes as possible, between the
-     *
-     * @param bytes
-     */
-    void parse(Bytes bytes);
+    void endOfObject();
+
+    void endOfArray();
 }
