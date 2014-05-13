@@ -37,19 +37,31 @@ public class FixSaxParser implements BytesSaxParser {
         while (limit2 > bytes.position() && bytes.readByte(limit2 - 1) != FIELD_TERMINATOR)
             limit2--;
         bytes.limit(limit2);
-        while (bytes.remaining() > 0) {
-            long fieldNum = bytes.parseLong();
-            long pos = bytes.position();
-            while (bytes.readByte() != FIELD_TERMINATOR) ;
-            long end = bytes.position() - 1;
-            bytes.limit(end);
-            bytes.position(pos);
-            handler.onField(fieldNum, bytes);
+        boolean tmpSelf = bytes.selfTerminating();
+        try {
+            bytes.selfTerminating(true);
+            while (bytes.remaining() > 0) {
+                long fieldNum = bytes.parseLong();
+                long pos = bytes.position();
 
+                searchForTheEndOfField(bytes);
+
+                long end = bytes.position() - 1;
+                bytes.limit(end);
+                bytes.position(pos);
+                handler.onField(fieldNum, bytes);
+
+                bytes.limit(limit);
+                bytes.position(end + 1);
+            }
             bytes.limit(limit);
-            bytes.position(end + 1);
+            bytes.position(limit2);
+        } finally {
+            bytes.selfTerminating(tmpSelf);
         }
-        bytes.limit(limit);
-        bytes.position(limit2);
+    }
+
+    private void searchForTheEndOfField(Bytes bytes) {
+        while (bytes.readByte() != FIELD_TERMINATOR) ;
     }
 }
