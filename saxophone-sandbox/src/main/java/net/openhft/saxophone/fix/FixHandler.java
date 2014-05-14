@@ -19,5 +19,11 @@ package net.openhft.saxophone.fix;
 import net.openhft.lang.io.Bytes;
 
 public interface FixHandler {
+    /**
+     * Called for each field of a FIX message.
+     *
+     * @param fieldNumber 8 is the start and 10 is the end, for other field numbers see fixprotocol.org
+     * @param value       to be ignored, parsed or copied.
+     */
     void onField(long fieldNumber, Bytes value);
 }
