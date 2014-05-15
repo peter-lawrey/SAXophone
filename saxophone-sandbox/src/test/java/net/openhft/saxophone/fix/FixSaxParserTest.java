@@ -45,12 +45,12 @@ public class FixSaxParserTest {
         String s = "8=FIX.4.2|9=130|35=D|34=659|49=BROKER04|56=REUTERS|52=20070123-19:09:43|38=1000|59=1|100=N|40=1|11=ORD10001|60=20070123-19:01:17|55=HPQ|54=1|21=2|10=004|";
 //        ByteBufferBytes nb = new ByteBufferBytes(ByteBuffer.wrap(s.replace('|', '\u0001').getBytes()));
         NativeBytes nb = new DirectStore(s.length()).bytes();
-        nb.write(s.replace('|', '\u0001').getBytes());
+        nb.append(s.replace('|', '\u0001'));
         nb.flip();
 
         final AtomicInteger count = new AtomicInteger();
         FixSaxParser parser = new FixSaxParser(new MyFixHandler(count));
-        int runs = 50000;
+        int runs = 200000;
         for (int t = 0; t < 5; t++) {
             count.set(0);
             long start = System.nanoTime();
@@ -64,18 +64,14 @@ public class FixSaxParserTest {
         }
     }
 
-    static void processFixMessage(StringBuilder sender, StringBuilder target, StringBuilder clOrdId, StringBuilder symbol, long quantity, double price, int ordType) {
+    static void processFixMessage(StringBuilder sender, StringBuilder target, StringBuilder clOrdId, StringBuilder symbol, double quantity, double price, int ordType) {
 
     }
 
     static class MyFixHandler implements FixHandler {
-        final StringBuilder sender;
-        final StringBuilder target;
-        final StringBuilder clOrdId;
-        final StringBuilder symbol;
-        private final AtomicInteger count;
-        long quantity;
-        double price;
+        final AtomicInteger count;
+        final StringBuilder sender, target, clOrdId, symbol;
+        double quantity, price;
         int ordType;
 
         public MyFixHandler(AtomicInteger count) {
@@ -90,13 +86,7 @@ public class FixSaxParserTest {
         public void onField(long fieldNumber, Bytes value) {
             switch ((int) fieldNumber) {
                 case 8: // reset
-                    quantity = 0;
-                    price = Double.NaN;
-                    ordType = 0;
-                    sender.setLength(0);
-                    target.setLength(0);
-                    clOrdId.setLength(0);
-                    symbol.setLength(0);
+                    resetAll();
                     break;
                 case 35:
                     assert value.readByte() == 'D';
@@ -124,8 +114,19 @@ public class FixSaxParserTest {
                     break;
                 case 10:
                     processFixMessage(sender, target, clOrdId, symbol, quantity, price, ordType);
+                    break;
             }
             count.incrementAndGet();
+        }
+
+        private void resetAll() {
+            quantity = 0;
+            price = Double.NaN;
+            ordType = 0;
+            sender.setLength(0);
+            target.setLength(0);
+            clOrdId.setLength(0);
+            symbol.setLength(0);
         }
 
     }
