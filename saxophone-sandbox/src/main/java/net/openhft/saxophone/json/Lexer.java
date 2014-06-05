@@ -136,7 +136,7 @@ final class Lexer {
 
     void reset() {
         bufInUse = false;
-        buf.clear();
+        buf.reset();
         error = null;
         outBuf = null;
         outPos = outLen = 0;
@@ -563,7 +563,7 @@ final class Lexer {
                      * - eof hit. (tok_eof) */
                     tok = lexComment(jsonText);
                     if (tok == COMMENT) {
-                        buf.clear();
+                        buf.reset();
                         bufInUse = false;
                         startOffset = jsonText.position();
                         continue lexing;
@@ -582,7 +582,7 @@ final class Lexer {
          * if it's an EOF token */
         if (tok == EOF || bufInUse) {
             if (!bufInUse) {
-                buf.clear();
+                buf.reset();
                 bufInUse = true;
             }
             buf.append(jsonText, startOffset, jsonText.position() - startOffset);

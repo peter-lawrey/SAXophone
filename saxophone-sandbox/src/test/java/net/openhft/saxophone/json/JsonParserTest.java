@@ -23,11 +23,15 @@ import org.junit.Test;
 
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
 
+import static java.nio.ByteBuffer.wrap;
 import static org.junit.Assert.assertEquals;
 
 public final class JsonParserTest {
+
+    public static final String WRONG_NESTED_ARRAYS = "[[], [[[]]";
+    public static final String BEYOND_MAX_LONG = "9223372036854775808";
+    public static final String BEYOND_MIN_LONG = "-9223372036854775809";
 
     @Test
     public void testInts() {
@@ -37,13 +41,23 @@ public final class JsonParserTest {
     }
 
     @Test(expected = ParseException.class)
-    public void testMaxLongOverflow() {
-        test("9223372036854775808");
+    public void testMaxLongOverflowSimple() {
+        testSimple(BEYOND_MAX_LONG);
     }
 
     @Test(expected = ParseException.class)
-    public void testMinLongOverflow() {
-        test("-9223372036854775809");
+    public void testMaxLongOverflowPull() {
+        testPull(BEYOND_MAX_LONG);
+    }
+
+    @Test(expected = ParseException.class)
+    public void testMinLongOverflowSimple() {
+        testSimple(BEYOND_MIN_LONG);
+    }
+
+    @Test(expected = ParseException.class)
+    public void testMinLongOverflowPull() {
+        testPull(BEYOND_MIN_LONG);
     }
 
     @Test
@@ -97,22 +111,50 @@ public final class JsonParserTest {
     }
 
     @Test(expected = ParseException.class)
-    public void testWrongNestedArrays() {
-        test("[[], [[[]]");
+    public void testWrongNestedArraysSimple() {
+        testSimple(WRONG_NESTED_ARRAYS);
+    }
+
+    @Test(expected = ParseException.class)
+    public void testWrongNestedArraysPull() {
+        testPull(WRONG_NESTED_ARRAYS);
     }
 
     private void test(String json) {
+        testSimple(json);
+        testPull(json);
+    }
+    
+    private void testSimple(String json) {
         StringWriter stringWriter = new StringWriter();
         JsonParser p = JsonParser.builder().applyAdapter(new WriterAdapter(stringWriter)).build();
         try {
-            p.parse(new ByteBufferBytes(ByteBuffer.wrap(json.getBytes("UTF-8"))));
+            p.parse(new ByteBufferBytes(wrap(json.getBytes("UTF-8"))));
         } catch (UnsupportedEncodingException e) {
             throw new AssertionError(e);
         }
         p.close();
-        com.google.gson.JsonParser parser = new com.google.gson.JsonParser();
-        JsonElement o1 = parser.parse(json);
-        JsonElement o2 = parser.parse(stringWriter.toString());
+        com.google.gson.JsonParser referenceParser = new com.google.gson.JsonParser();
+        JsonElement o1 = referenceParser.parse(json);
+        JsonElement o2 = referenceParser.parse(stringWriter.toString());
+        assertEquals(o1, o2);
+    }
+
+    private void testPull(String json) {
+        StringWriter stringWriter = new StringWriter();
+        JsonParser p = JsonParser.builder().applyAdapter(new WriterAdapter(stringWriter)).build();
+        try {
+            ByteBufferBytes jsonBytes = new ByteBufferBytes(wrap(json.getBytes("UTF-8")));
+            for (long i = 0; i < jsonBytes.capacity(); i++) {
+                p.parse(jsonBytes.bytes(i, 1));
+            }
+        } catch (UnsupportedEncodingException e) {
+            throw new AssertionError(e);
+        }
+        p.close();
+        com.google.gson.JsonParser referenceParser = new com.google.gson.JsonParser();
+        JsonElement o1 = referenceParser.parse(json);
+        JsonElement o2 = referenceParser.parse(stringWriter.toString());
         assertEquals(o1, o2);
     }
 }

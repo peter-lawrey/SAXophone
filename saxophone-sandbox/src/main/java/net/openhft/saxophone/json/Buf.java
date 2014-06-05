@@ -25,7 +25,7 @@ final class Buf extends DirectBytes {
 
     private static final long BUF_INIT_SIZE = 2048;
 
-    public Buf() {
+    Buf() {
         super(new DirectStore(BUF_INIT_SIZE), new AtomicInteger(1));
         writeByte(0, 0);
     }
@@ -62,10 +62,8 @@ final class Buf extends DirectBytes {
         position(pos);
     }
 
-    @Override
-    public Buf clear() {
-        super.clear();
+    void reset() {
+        position(0);
         limit(0);
-        return this;
     }
 }
