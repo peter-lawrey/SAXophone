@@ -103,7 +103,7 @@ public final class JsonParserTest {
 
     private void test(String json) {
         StringWriter stringWriter = new StringWriter();
-        JsonParser p = new JsonParserBuilder().applyAdapter(new WriterAdapter(stringWriter)).build();
+        JsonParser p = JsonParser.builder().applyAdapter(new WriterAdapter(stringWriter)).build();
         try {
             p.parse(new ByteBufferBytes(ByteBuffer.wrap(json.getBytes("UTF-8"))));
         } catch (UnsupportedEncodingException e) {

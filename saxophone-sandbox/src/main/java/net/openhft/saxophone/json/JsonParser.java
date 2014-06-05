@@ -40,6 +40,10 @@ public final class JsonParser implements Closeable {
      * I tried to preserve method order and names to ease side-to-side comparison.
      */
 
+    public static JsonParserBuilder builder() {
+        return new JsonParserBuilder();
+    }
+
     private static ParseException handlerException(Exception e) {
         return new ParseException("Exception in the handler", e);
     }

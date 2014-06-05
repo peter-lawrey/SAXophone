@@ -37,6 +37,8 @@ public final class JsonParserBuilder {
     @Nullable private IntegerHandler integerHandler = null;
     @Nullable private FloatingHandler floatingHandler = null;
 
+    JsonParserBuilder() {}
+
     public JsonParser build() {
         checkAnyHandlerNonNull();
         return new JsonParser(options, objectStartHandler, objectEndHandler, arrayStartHandler,
