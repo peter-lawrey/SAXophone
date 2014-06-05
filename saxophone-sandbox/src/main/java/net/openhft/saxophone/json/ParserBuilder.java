@@ -38,9 +38,25 @@ public final class ParserBuilder {
     @Nullable private FloatingHandler floatingHandler = null;
 
     public Parser build() {
+        checkAnyHandlerNonNull();
         return new Parser(options, objectStartHandler, objectEndHandler, arrayStartHandler,
                 arrayEndHandler, booleanHandler, nullHandler, stringHandler, objectKeyHandler,
                 numberHandler, integerHandler, floatingHandler);
+    }
+
+    private void checkAnyHandlerNonNull() {
+        if (objectStartHandler != null) return;
+        if (objectEndHandler != null) return;
+        if (arrayStartHandler != null) return;
+        if (arrayEndHandler != null) return;
+        if (booleanHandler != null) return;
+        if (nullHandler != null) return;
+        if (stringHandler != null) return;
+        if (objectKeyHandler != null) return;
+        if (numberHandler != null) return;
+        if (integerHandler != null) return;
+        if (floatingHandler != null) return;
+        throw new IllegalStateException("Parser should have at least one handler");
     }
 
     /**
