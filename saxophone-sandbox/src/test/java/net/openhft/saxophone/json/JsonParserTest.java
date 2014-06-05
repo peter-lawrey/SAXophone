@@ -133,7 +133,7 @@ public final class JsonParserTest {
         } catch (UnsupportedEncodingException e) {
             throw new AssertionError(e);
         }
-        p.close();
+        p.finish();
         com.google.gson.JsonParser referenceParser = new com.google.gson.JsonParser();
         JsonElement o1 = referenceParser.parse(json);
         JsonElement o2 = referenceParser.parse(stringWriter.toString());
@@ -151,7 +151,7 @@ public final class JsonParserTest {
         } catch (UnsupportedEncodingException e) {
             throw new AssertionError(e);
         }
-        p.close();
+        p.finish();
         com.google.gson.JsonParser referenceParser = new com.google.gson.JsonParser();
         JsonElement o1 = referenceParser.parse(json);
         JsonElement o2 = referenceParser.parse(stringWriter.toString());

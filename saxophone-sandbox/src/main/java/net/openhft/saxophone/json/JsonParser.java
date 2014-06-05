@@ -23,7 +23,6 @@ import net.openhft.lang.model.constraints.Nullable;
 import net.openhft.saxophone.ParseException;
 import net.openhft.saxophone.json.handler.*;
 
-import java.io.Closeable;
 import java.nio.ByteBuffer;
 import java.util.EnumSet;
 
@@ -31,7 +30,58 @@ import static net.openhft.saxophone.json.JsonParserOption.*;
 import static net.openhft.saxophone.json.ParserState.*;
 import static net.openhft.saxophone.json.TokenType.*;
 
-public final class JsonParser implements Closeable {
+/**
+ * A pull JSON parser, accepts chunks of JSON as {@link net.openhft.lang.io.Bytes}.
+ *
+ * <p>Construction: <pre>{@code
+ * Parser.builder().applyAdapter(eventHandler).options(...).build();
+ * }</pre>
+ *
+ * <p>Try to reuse the parser, because it's allocation cost is pretty high. It's safe and valid to
+ * use the parser just like newly created one after {@link #finish()} or {@link #reset()} calls.
+ *
+ * <p>Example usage: <pre>{@code
+ * class Foo {
+ *     JsonParser parser = ...;
+ *
+ *     // return true if parsing succeed
+ *     boolean parse(Iterator<Bytes> chunks) {
+ *         while (chunks.hasNext()) {
+ *             if (!parser.parse(chunks.next())) {
+ *                 parser.reset();
+ *                 return false;
+ *             }
+ *         }
+ *         return parser.finish();
+ *     }
+ * }
+ * }</pre>
+ *
+ * <p>If you want to recover {@link net.openhft.saxophone.ParseException}: <pre>{@code
+ * ...
+ * boolean parse(Iterator<Bytes> chunks) throws IOException {
+ *     try {
+ *         while (chunks.hasNext()) {
+ *             if (!parser.parse(chunks.next())) {
+ *                 parser.reset();
+ *                 return false;
+ *             }
+ *         }
+ *         return parser.finish();
+ *     } catch (ParseException e) {
+ *         parser.reset();
+ *         Throwable cause = e.getCause();
+ *         if (cause instanceof IOException) {
+ *             throw (IOException) cause;
+ *         } else {
+ *             System.err.println("Json is malformed!");
+ *             return false;
+ *         }
+ *     }
+ * }
+ * }</pre>
+ */
+public final class JsonParser {
 
     /**
      * Porting note: this class approximately corresponds to src/yajl_parser.c, src/yajl_parser.h
@@ -42,10 +92,6 @@ public final class JsonParser implements Closeable {
 
     public static JsonParserBuilder builder() {
         return new JsonParserBuilder();
-    }
-
-    private static ParseException handlerException(Exception e) {
-        return new ParseException("Exception in the handler", e);
     }
 
     private final Lexer lexer;
@@ -182,6 +228,12 @@ public final class JsonParser implements Closeable {
         reset();
     }
 
+    /**
+     * Resets the parser to clear "just like after construction" state.
+     *
+     * <p>Reusing parsers is encouraged because parser allocation / garbage collection
+     * is pretty costly.
+     */
     public void reset() {
         lexer.reset();
         stateStack.clear();
@@ -221,25 +273,47 @@ public final class JsonParser implements Closeable {
         return !neg ? -ret : ret;
     }
 
+    /**
+     * Processes the last token, if needed, and finally {@link #reset() resets} the parser
+     * (regardless if an exception is thrown in this call).
+     *
+     * <p>If the JSON data portions given to {@link #parse(net.openhft.lang.io.Bytes)} method
+     * by now since the previous {@link #reset()} call, or call of this method,
+     * or parser construction don't comprise one or several complete JSON entities, and
+     * {@link net.openhft.saxophone.json.JsonParserOption#ALLOW_PARTIAL_VALUES} is not set,
+     * {@link net.openhft.saxophone.ParseException} is thrown.
+     *
+     * @return {@code true} if parsing successfully finished, {@code false}, if the handler
+     *         of the last token cancelled parsing
+     * @throws net.openhft.saxophone.ParseException if the given JSON is malformed (exact meaning of
+     *         "malformed" depends on parser's {@link JsonParserBuilder#options() options}),
+     *         or if the handler of the last token, if it was actually processed during this call,
+     *         have thrown a checked exception,
+     *         or if {@link net.openhft.saxophone.json.handler.IntegerHandler} is provided,
+     *         the last token is an integer and it is out of primitive {@code long} range:
+     *         greater than {@code Long.MAX_VALUE} or lesser than {@code Long.MIN_VALUE}
+     * @throws IllegalStateException if parsing was cancelled or any exception was thrown
+     *         in {@link #parse(net.openhft.lang.io.Bytes)} call after
+     *         the previous {@link #reset()} call, or call of this method, or parser construction
+     */
     public boolean finish() {
-        if (!parse(finishSpace())) return false;
+        try {
+            if (!parse(finishSpace())) return false;
 
-        switch(stateStack.current()) {
-            case PARSE_ERROR:
-            case LEXICAL_ERROR:
-                throw new ParseException(parseError);
-            case HANDLER_CANCEL:
-                throw new IllegalStateException("client cancelled parse via handler");
-            case GOT_VALUE:
-            case PARSE_COMPLETE:
-                return true;
-            default:
-                if (!flags.contains(ALLOW_PARTIAL_VALUES)) {
-                    stateStack.set(PARSE_ERROR);
-                    parseError = "premature EOF";
-                    throw new ParseException(parseError);
-                }
-                return true;
+            switch(stateStack.current()) {
+                case PARSE_ERROR:
+                case LEXICAL_ERROR:
+                case HANDLER_CANCEL:
+                case HANDLER_EXCEPTION:
+                    throw new AssertionError("exception should be thrown directly from parse()");
+                case GOT_VALUE:
+                case PARSE_COMPLETE:
+                    return true;
+                default:
+                    return flags.contains(ALLOW_PARTIAL_VALUES) || parseError("premature EOF");
+            }
+        } finally {
+            reset();
         }
     }
 
@@ -250,11 +324,41 @@ public final class JsonParser implements Closeable {
         return finishSpace.clear();
     }
 
-    @Override
-    public void close() {
-        finish();
-    }
-
+    /**
+     * Parses a portion of JSON from the given {@code Bytes} from it's
+     * {@link net.openhft.lang.io.Bytes#position() position} to
+     * {@link net.openhft.lang.io.Bytes#limit() limit}. Position is incremented until there are
+     * no {@link net.openhft.lang.io.Bytes#remaining() remaining} bytes.
+     *
+     * <p>As this is a pull parser, the given JSON text may break at any character. If the
+     * {@link net.openhft.saxophone.json.JsonParserOption#ALLOW_PARTIAL_VALUES} is not set,
+     * {@link net.openhft.saxophone.ParseException} will be thrown only on {@link #finish()} call.
+     *
+     * <p>As JSON tokens are parsed, appropriate event handlers are notified. To ensure that the
+     * last token is processed, call {@link #finish()} afterwards.
+     *
+     * <p>Returns {@code true} if the parsing succeed and token handlers haven't send a cancel
+     * request (i. e. returned {@code true} all the way). If any handler returns {@code false},
+     * parsing is terminated immediately and {@code false} is returned.
+     *
+     * <p>If one of the handlers throws a checked exception, it is wrapped with
+     * {@link net.openhft.saxophone.ParseException} (and available through
+     * {@link net.openhft.saxophone.ParseException#getCause()} later). If one of the handlers throws
+     * an unchecked exception ({@link java.lang.RuntimeException}),
+     * it is rethrown without any processing.
+     *
+     * @param jsonText a portion of JSON to parse
+     * @return {@code true} if the parsing wasn't cancelled by handlers
+     * @throws net.openhft.saxophone.ParseException if the given JSON is malformed (exact meaning of
+     *         "malformed" depends on parser's {@link JsonParserBuilder#options() options}),
+     *         or if one of the handlers throws a checked exception,
+     *         or {@link net.openhft.saxophone.json.handler.IntegerHandler} is provided but parsed
+     *         integer value is out of primitive {@code long} range:
+     *         greater than {@code Long.MAX_VALUE} or lesser than {@code Long.MIN_VALUE}
+     * @throws IllegalStateException if parsing was cancelled or any exception was thrown
+     *         in this method after the previous {@link #reset()} or {@link #finish()} call or
+     *         parser construction
+     */
     public boolean parse(Bytes jsonText) {
         TokenType tok;
 
@@ -272,17 +376,15 @@ public final class JsonParser implements Closeable {
                         if (jsonText.remaining() > 0) {
                             tok = lexer.lex(jsonText);
                             if (tok != EOF) {
-                                stateStack.set(PARSE_ERROR);
-                                parseError = "trailing garbage";
+                                return parseError("trailing garbage");
                             }
                             continue around_again;
                         }
                     }
                     return true;
                 case LEXICAL_ERROR:
-                    throw new ParseException("lexical error: " + lexer.error);
                 case PARSE_ERROR:
-                    throw new ParseException(parseError);
+                    throw new IllegalStateException("parse exception occurred: " + parseError);
                 case HANDLER_CANCEL:
                     throw new IllegalStateException("client cancelled parse via handler");
                 case HANDLER_EXCEPTION:
@@ -307,8 +409,7 @@ public final class JsonParser implements Closeable {
                         case EOF:
                             return true;
                         case ERROR:
-                            stateStack.set(LEXICAL_ERROR);
-                            continue around_again;
+                            lexicalError();
                         case STRING:
                             if (stringHandler != null) {
                                 try {
@@ -316,11 +417,8 @@ public final class JsonParser implements Closeable {
                                         stateStack.set(HANDLER_CANCEL);
                                         return false;
                                     }
-                                } catch (RuntimeException e) {
-                                    throw e;
                                 } catch (Exception e) {
-                                    stateStack.set(HANDLER_EXCEPTION);
-                                    throw handlerException(e);
+                                    return handlerError(e);
                                 }
                             }
                             break;
@@ -331,11 +429,8 @@ public final class JsonParser implements Closeable {
                                         stateStack.set(HANDLER_CANCEL);
                                         return false;
                                     }
-                                } catch (RuntimeException e) {
-                                    throw e;
                                 } catch (Exception e) {
-                                    stateStack.set(HANDLER_EXCEPTION);
-                                    throw handlerException(e);
+                                    return handlerError(e);
                                 }
                             }
                             break;
@@ -347,11 +442,8 @@ public final class JsonParser implements Closeable {
                                         stateStack.set(HANDLER_CANCEL);
                                         return false;
                                     }
-                                } catch (RuntimeException e) {
-                                    throw e;
                                 } catch (Exception e) {
-                                    stateStack.set(HANDLER_EXCEPTION);
-                                    throw handlerException(e);
+                                    return handlerError(e);
                                 }
                             }
                             break;
@@ -362,11 +454,8 @@ public final class JsonParser implements Closeable {
                                         stateStack.set(HANDLER_CANCEL);
                                         return false;
                                     }
-                                } catch (RuntimeException e) {
-                                    throw e;
                                 } catch (Exception e) {
-                                    stateStack.set(HANDLER_EXCEPTION);
-                                    throw handlerException(e);
+                                    return handlerError(e);
                                 }
                             }
                             break;
@@ -377,11 +466,8 @@ public final class JsonParser implements Closeable {
                                         stateStack.set(HANDLER_CANCEL);
                                         return false;
                                     }
-                                } catch (RuntimeException e) {
-                                    throw e;
                                 } catch (Exception e) {
-                                    stateStack.set(HANDLER_EXCEPTION);
-                                    throw handlerException(e);
+                                    return handlerError(e);
                                 }
                             }
                             stateToPush = MAP_START;
@@ -393,11 +479,8 @@ public final class JsonParser implements Closeable {
                                         stateStack.set(HANDLER_CANCEL);
                                         return false;
                                     }
-                                } catch (RuntimeException e) {
-                                    throw e;
                                 } catch (Exception e) {
-                                    stateStack.set(HANDLER_EXCEPTION);
-                                    throw handlerException(e);
+                                    return handlerError(e);
                                 }
                             }
                             stateToPush = ARRAY_START;
@@ -410,11 +493,8 @@ public final class JsonParser implements Closeable {
                                             stateStack.set(HANDLER_CANCEL);
                                             return false;
                                         }
-                                    } catch (RuntimeException e) {
-                                        throw e;
                                     } catch (Exception e) {
-                                        stateStack.set(HANDLER_EXCEPTION);
-                                        throw handlerException(e);
+                                        return handlerError(e);
                                     }
                                 }
                             } else if (integerHandler != null) {
@@ -425,16 +505,10 @@ public final class JsonParser implements Closeable {
                                         return false;
                                     }
                                 } catch (NumberFormatException e) {
-                                    stateStack.set(PARSE_ERROR);
-                                    parseError = "integer overflow";
-                                    /* try to restore error offset */
                                     tryRestoreErrorEffect(jsonText, startOffset);
-                                    continue around_again;
-                                } catch (RuntimeException e) {
-                                    throw e;
+                                    return parseError("integer overflow", e);
                                 } catch (Exception e) {
-                                    stateStack.set(HANDLER_EXCEPTION);
-                                    throw handlerException(e);
+                                    return handlerError(e);
                                 }
                             }
                             break;
@@ -446,11 +520,8 @@ public final class JsonParser implements Closeable {
                                             stateStack.set(HANDLER_CANCEL);
                                             return false;
                                         }
-                                    } catch (RuntimeException e) {
-                                        throw e;
                                     } catch (Exception e) {
-                                        stateStack.set(HANDLER_EXCEPTION);
-                                        throw handlerException(e);
+                                        return handlerError(e);
                                     }
                                 }
                             } else if (floatingHandler != null) {
@@ -460,16 +531,10 @@ public final class JsonParser implements Closeable {
                                         return false;
                                     }
                                 } catch (NumberFormatException e) {
-                                    stateStack.set(PARSE_ERROR);
-                                    parseError = "numeric (floating point) overflow";
-                                    /* try to restore error offset */
                                     tryRestoreErrorEffect(jsonText, startOffset);
-                                    continue around_again;
-                                } catch (RuntimeException e) {
-                                    throw e;
+                                    return parseError("numeric (floating point) overflow", e);
                                 } catch (Exception e) {
-                                    stateStack.set(HANDLER_EXCEPTION);
-                                    throw handlerException(e);
+                                    return handlerError(e);
                                 }
                             }
                             break;
@@ -481,11 +546,8 @@ public final class JsonParser implements Closeable {
                                             stateStack.set(HANDLER_CANCEL);
                                             return false;
                                         }
-                                    } catch (RuntimeException e) {
-                                        throw e;
                                     } catch (Exception e) {
-                                        stateStack.set(HANDLER_EXCEPTION);
-                                        throw handlerException(e);
+                                        return handlerError(e);
                                     }
                                 }
                                 stateStack.pop();
@@ -496,13 +558,9 @@ public final class JsonParser implements Closeable {
                         case COLON:
                         case COMMA:
                         case RIGHT_BRACKET:
-                            stateStack.set(PARSE_ERROR);
-                            parseError = "unallowed token at this point in JSON text";
-                            continue around_again;
+                            return parseError("unallowed token at this point in JSON text");
                         default:
-                            stateStack.set(PARSE_ERROR);
-                            parseError = "invalid token, internal error";
-                            continue around_again;
+                            return parseError("invalid token, internal error");
                     }
                     /* got a value.  transition depends on the state we're in. */
                     {
@@ -532,8 +590,7 @@ public final class JsonParser implements Closeable {
                         case EOF:
                             return true;
                         case ERROR:
-                            stateStack.set(LEXICAL_ERROR);
-                            continue around_again;
+                            lexicalError();
                         case STRING_WITH_ESCAPES:
                             onKey = onEscapedKey;
                             /* intentional fall-through */
@@ -544,11 +601,8 @@ public final class JsonParser implements Closeable {
                                         stateStack.set(HANDLER_CANCEL);
                                         return false;
                                     }
-                                } catch (RuntimeException e) {
-                                    throw e;
                                 } catch (Exception e) {
-                                    stateStack.set(HANDLER_EXCEPTION);
-                                    throw handlerException(e);
+                                    return handlerError(e);
                                 }
                             }
                             stateStack.set(MAP_SEP);
@@ -561,11 +615,8 @@ public final class JsonParser implements Closeable {
                                             stateStack.set(HANDLER_CANCEL);
                                             return false;
                                         }
-                                    } catch (RuntimeException e) {
-                                        throw e;
                                     } catch (Exception e) {
-                                        stateStack.set(HANDLER_EXCEPTION);
-                                        throw handlerException(e);
+                                        return handlerError(e);
                                     }
                                 }
                                 stateStack.pop();
@@ -573,9 +624,7 @@ public final class JsonParser implements Closeable {
                             }
                             /* intentional fall-through */
                         default:
-                            stateStack.set(PARSE_ERROR);
-                            parseError = "invalid object key (must be a string)";
-                            continue around_again;
+                            return parseError("invalid object key (must be a string)");
                     }
                 }
                 case MAP_SEP: {
@@ -587,12 +636,10 @@ public final class JsonParser implements Closeable {
                         case EOF:
                             return true;
                         case ERROR:
-                            stateStack.set(LEXICAL_ERROR);
-                            continue around_again;
+                            lexicalError();
                         default:
-                            stateStack.set(PARSE_ERROR);
-                            parseError = "object key and value must be separated by a colon (':')";
-                            continue around_again;
+                            return parseError(
+                                    "object key and value must be separated by a colon (':')");
                     }
                 }
                 case MAP_GOT_VAL: {
@@ -605,11 +652,8 @@ public final class JsonParser implements Closeable {
                                         stateStack.set(HANDLER_CANCEL);
                                         return false;
                                     }
-                                } catch (RuntimeException e) {
-                                    throw e;
                                 } catch (Exception e) {
-                                    stateStack.set(HANDLER_EXCEPTION);
-                                    throw handlerException(e);
+                                    return handlerError(e);
                                 }
                             }
                             stateStack.pop();
@@ -620,14 +664,11 @@ public final class JsonParser implements Closeable {
                         case EOF:
                             return true;
                         case ERROR:
-                            stateStack.set(LEXICAL_ERROR);
-                            continue around_again;
+                            lexicalError();
                         default:
-                            stateStack.set(PARSE_ERROR);
-                            parseError = "after key and value, inside map, I expect ',' or '}'";
                             tryRestoreErrorEffect(jsonText, startOffset);
-
-                            continue around_again;
+                            return parseError(
+                                    "after key and value, inside map, I expect ',' or '}'");
                     }
                 }
                 case ARRAY_GOT_VAL: {
@@ -640,11 +681,8 @@ public final class JsonParser implements Closeable {
                                         stateStack.set(HANDLER_CANCEL);
                                         return false;
                                     }
-                                } catch (RuntimeException e) {
-                                    throw e;
                                 } catch (Exception e) {
-                                    stateStack.set(HANDLER_EXCEPTION);
-                                    throw handlerException(e);
+                                    return handlerError(e);
                                 }
                             }
                             stateStack.pop();
@@ -655,16 +693,37 @@ public final class JsonParser implements Closeable {
                         case EOF:
                             return true;
                         case ERROR:
-                            stateStack.set(LEXICAL_ERROR);
-                            continue around_again;
+                            return lexicalError();
                         default:
-                            stateStack.set(PARSE_ERROR);
-                            parseError = "after array element, I expect ',' or ']'";
-                            // continue around_again
+                            return parseError("after array element, I expect ',' or ']'");
                     }
                 }
             }
         }
+    }
+
+    private boolean handlerError(Exception e) {
+        stateStack.set(HANDLER_EXCEPTION);
+        if (e instanceof RuntimeException) throw (RuntimeException) e;
+        throw new ParseException("Exception in the handler", e);
+    }
+
+    private boolean parseError(String message) {
+        stateStack.set(PARSE_ERROR);
+        parseError = message;
+        throw new ParseException(parseError);
+    }
+
+    private boolean parseError(String message, Throwable cause) {
+        stateStack.set(PARSE_ERROR);
+        parseError = message;
+        throw new ParseException(parseError, cause);
+    }
+
+    private boolean lexicalError() {
+        stateStack.set(LEXICAL_ERROR);
+        parseError = "lexical error: " + lexer.error;
+        throw new ParseException(parseError);
     }
 
     private void tryRestoreErrorEffect(Bytes jsonText, long startOffset) {
