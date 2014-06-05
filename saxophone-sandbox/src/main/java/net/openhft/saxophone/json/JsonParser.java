@@ -27,7 +27,7 @@ import java.io.Closeable;
 import java.nio.ByteBuffer;
 import java.util.EnumSet;
 
-import static net.openhft.saxophone.json.JsonOption.*;
+import static net.openhft.saxophone.json.JsonParserOption.*;
 import static net.openhft.saxophone.json.ParserState.*;
 import static net.openhft.saxophone.json.TokenType.*;
 
@@ -53,7 +53,7 @@ public final class JsonParser implements Closeable {
     /** temporary storage for decoded strings */
     private final StringBuilder decodeBuf = new StringBuilder();
     private final ParserState.Stack stateStack;
-    private final EnumSet<JsonOption> flags;
+    private final EnumSet<JsonParserOption> flags;
     private Bytes finishSpace;
 
     @Nullable private final ObjectStartHandler objectStartHandler;
@@ -155,10 +155,11 @@ public final class JsonParser implements Closeable {
     private final OnFloating onFloating = new OnFloating();
 
 
-    JsonParser(EnumSet<JsonOption> flags,
+    JsonParser(EnumSet<JsonParserOption> flags,
                @Nullable ObjectStartHandler objectStartHandler,
                @Nullable ObjectEndHandler objectEndHandler,
-               @Nullable ArrayStartHandler arrayStartHandler, @Nullable ArrayEndHandler arrayEndHandler,
+               @Nullable ArrayStartHandler arrayStartHandler,
+               @Nullable ArrayEndHandler arrayEndHandler,
                @Nullable BooleanHandler booleanHandler, @Nullable NullHandler nullHandler,
                @Nullable StringHandler stringHandler, @Nullable ObjectKeyHandler objectKeyHandler,
                @Nullable NumberHandler numberHandler, @Nullable IntegerHandler integerHandler,

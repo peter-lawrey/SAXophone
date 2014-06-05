@@ -24,7 +24,7 @@ import java.util.*;
 
 public final class JsonParserBuilder {
     
-    @NotNull private EnumSet<JsonOption> options = EnumSet.noneOf(JsonOption.class);
+    @NotNull private EnumSet<JsonParserOption> options = EnumSet.noneOf(JsonParserOption.class);
     @Nullable private ObjectStartHandler objectStartHandler = null;
     @Nullable private ObjectEndHandler objectEndHandler = null;
     @Nullable private ArrayStartHandler arrayStartHandler = null;
@@ -67,33 +67,35 @@ public final class JsonParserBuilder {
      *
      * @return the parser options as read-only set
      */
-    public Set<JsonOption> options() {
+    public Set<JsonParserOption> options() {
         return Collections.unmodifiableSet(options);
     }
 
     /**
      * Sets the parser options. The previous options, if any, are discarded.
+     *
      * @param options parser options
      * @return a reference to this object
      */
-    public JsonParserBuilder options(Collection<JsonOption> options) {
+    public JsonParserBuilder options(Collection<JsonParserOption> options) {
         this.options = EnumSet.copyOf(options);
         return this;
     }
 
     /**
      * Sets the parser options. The previous options, if any, are discarded.
+     *
      * @param first parser option
      * @param rest the rest parser options
      * @return a reference to this object
      */
-    public JsonParserBuilder options(JsonOption first, JsonOption... rest) {
+    public JsonParserBuilder options(JsonParserOption first, JsonParserOption... rest) {
         this.options = EnumSet.of(first, rest);
         return this;
     }
 
     public JsonParserBuilder clearOptions() {
-        options = EnumSet.noneOf(JsonOption.class);
+        options = EnumSet.noneOf(JsonParserOption.class);
         return this;
     }
 

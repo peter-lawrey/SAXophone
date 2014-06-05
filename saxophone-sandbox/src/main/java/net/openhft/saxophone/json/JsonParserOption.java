@@ -17,7 +17,7 @@
 
 package net.openhft.saxophone.json;
 
-public enum JsonOption {
+public enum JsonParserOption {
 
     /**
      * Porting note: this enum corresponds to yajl_option enum from src/api/yajl_parse.h in YAJL.
