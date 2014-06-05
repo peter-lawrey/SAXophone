@@ -16,9 +16,9 @@
 
 package net.openhft.saxophone.json;
 
-public final class ParseException extends Exception {
+public final class ParseException extends RuntimeException {
     static ParseException handlerException(Exception e) {
-        return new ParseException("Excepton in the handler", e);
+        return new ParseException("Exception in the handler", e);
     }
 
     public ParseException(String message) {

@@ -22,6 +22,7 @@ import net.openhft.lang.io.Bytes;
 import net.openhft.lang.model.constraints.Nullable;
 import net.openhft.saxophone.json.handler.*;
 
+import java.io.Closeable;
 import java.nio.ByteBuffer;
 import java.util.EnumSet;
 
@@ -30,7 +31,7 @@ import static net.openhft.saxophone.json.ParseException.handlerException;
 import static net.openhft.saxophone.json.ParserState.*;
 import static net.openhft.saxophone.json.TokenType.*;
 
-public final class Parser implements AutoCloseable {
+public final class Parser implements Closeable {
 
     /**
      * Porting note: this class approximately corresponds to src/yajl_parser.c, src/yajl_parser.h
@@ -211,7 +212,7 @@ public final class Parser implements AutoCloseable {
         return !neg ? -ret : ret;
     }
 
-    public boolean finish() throws ParseException {
+    public boolean finish() {
         if (!parse(finishSpace())) return false;
 
         switch(stateStack.current()) {
@@ -241,11 +242,11 @@ public final class Parser implements AutoCloseable {
     }
 
     @Override
-    public void close() throws ParseException {
+    public void close() {
         finish();
     }
 
-    public boolean parse(Bytes jsonText) throws ParseException {
+    public boolean parse(Bytes jsonText) {
         TokenType tok;
 
         long startOffset = jsonText.position();
