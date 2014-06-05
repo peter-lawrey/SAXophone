@@ -39,6 +39,8 @@ import static net.openhft.saxophone.json.TokenType.*;
  *
  * <p>Try to reuse the parser, because it's allocation cost is pretty high. It's safe and valid to
  * use the parser just like newly created one after {@link #finish()} or {@link #reset()} calls.
+ * To reset handlers' state on parser reset, implement and provide
+ * {@link net.openhft.saxophone.json.handler.ResetHandler}.
  *
  * <p>Example usage: <pre>{@code
  * class Foo {
@@ -113,6 +115,7 @@ public final class JsonParser {
     @Nullable private final NumberHandler numberHandler;
     @Nullable private final IntegerHandler integerHandler;
     @Nullable private final FloatingHandler floatingHandler;
+    @Nullable private final ResetHandler resetHandler;
 
     private class OnString {
         boolean on() throws Exception {
@@ -209,7 +212,8 @@ public final class JsonParser {
                @Nullable BooleanHandler booleanHandler, @Nullable NullHandler nullHandler,
                @Nullable StringHandler stringHandler, @Nullable ObjectKeyHandler objectKeyHandler,
                @Nullable NumberHandler numberHandler, @Nullable IntegerHandler integerHandler,
-               @Nullable FloatingHandler floatingHandler) {
+               @Nullable FloatingHandler floatingHandler,
+               @Nullable ResetHandler resetHandler) {
         this.flags = flags;
         this.objectStartHandler = objectStartHandler;
         this.objectEndHandler = objectEndHandler;
@@ -222,6 +226,7 @@ public final class JsonParser {
         this.numberHandler = numberHandler;
         this.integerHandler = integerHandler;
         this.floatingHandler = floatingHandler;
+        this.resetHandler = resetHandler;
 
         lexer = new Lexer(flags.contains(ALLOW_COMMENTS), !flags.contains(DONT_VALIDATE_STRINGS));
         stateStack = new Stack();
@@ -231,6 +236,9 @@ public final class JsonParser {
     /**
      * Resets the parser to clear "just like after construction" state.
      *
+     * <p>At the end {@link net.openhft.saxophone.json.handler.ResetHandler}, if provided,
+     * is notified.
+     *
      * <p>Reusing parsers is encouraged because parser allocation / garbage collection
      * is pretty costly.
      */
@@ -239,6 +247,8 @@ public final class JsonParser {
         stateStack.clear();
         stateStack.push(START);
         parseError = null;
+        if (resetHandler != null)
+            resetHandler.onReset();
     }
 
     private long parseInteger(Bytes s, long off, long len) {

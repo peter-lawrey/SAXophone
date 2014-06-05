@@ -36,17 +36,18 @@ public final class JsonParserBuilder {
     @Nullable private NumberHandler numberHandler = null;
     @Nullable private IntegerHandler integerHandler = null;
     @Nullable private FloatingHandler floatingHandler = null;
+    @Nullable private ResetHandler resetHandler = null;
 
     JsonParserBuilder() {}
 
     public JsonParser build() {
-        checkAnyHandlerNonNull();
+        checkAnyTokenHandlerNonNull();
         return new JsonParser(options, objectStartHandler, objectEndHandler, arrayStartHandler,
                 arrayEndHandler, booleanHandler, nullHandler, stringHandler, objectKeyHandler,
-                numberHandler, integerHandler, floatingHandler);
+                numberHandler, integerHandler, floatingHandler, resetHandler);
     }
 
-    private void checkAnyHandlerNonNull() {
+    private void checkAnyTokenHandlerNonNull() {
         if (objectStartHandler != null) return;
         if (objectEndHandler != null) return;
         if (arrayStartHandler != null) return;
@@ -58,7 +59,8 @@ public final class JsonParserBuilder {
         if (numberHandler != null) return;
         if (integerHandler != null) return;
         if (floatingHandler != null) return;
-        throw new IllegalStateException("Parser should have at least one handler");
+        // intentionally without resetHandler
+        throw new IllegalStateException("Parser should have at least one JSON token handler");
     }
 
     /**
@@ -129,6 +131,7 @@ public final class JsonParserBuilder {
         if (a instanceof NumberHandler) { numberHandler((NumberHandler) a); applied = true; }
         if (a instanceof IntegerHandler) { integerHandler((IntegerHandler) a); applied = true; }
         if (a instanceof FloatingHandler) { floatingHandler((FloatingHandler) a); applied = true; }
+        if (a instanceof ResetHandler) { resetHandler((ResetHandler) a); applied = true; }
         if (!applied)
             throw new IllegalArgumentException(a + " isn't an instance of any handler interface");
         return this;
@@ -252,5 +255,15 @@ public final class JsonParserBuilder {
         if (h1 != null && h2 != null)
             throw new IllegalStateException(
                     "Parser cannot have " + name1 + " and " + name2 + " handlers simultaneously");
+    }
+
+    @Nullable
+    public ResetHandler resetHandler() {
+        return resetHandler;
+    }
+
+    public JsonParserBuilder resetHandler(@Nullable ResetHandler resetHandler) {
+        this.resetHandler = resetHandler;
+        return this;
     }
 }
