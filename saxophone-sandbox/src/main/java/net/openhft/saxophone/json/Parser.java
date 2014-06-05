@@ -20,6 +20,7 @@ package net.openhft.saxophone.json;
 import net.openhft.lang.io.ByteBufferBytes;
 import net.openhft.lang.io.Bytes;
 import net.openhft.lang.model.constraints.Nullable;
+import net.openhft.saxophone.ParseException;
 import net.openhft.saxophone.json.handler.*;
 
 import java.io.Closeable;
@@ -27,7 +28,6 @@ import java.nio.ByteBuffer;
 import java.util.EnumSet;
 
 import static net.openhft.saxophone.json.Option.*;
-import static net.openhft.saxophone.json.ParseException.handlerException;
 import static net.openhft.saxophone.json.ParserState.*;
 import static net.openhft.saxophone.json.TokenType.*;
 
@@ -39,6 +39,10 @@ public final class Parser implements Closeable {
      *
      * I tried to preserve method order and names to ease side-to-side comparison.
      */
+
+    private static ParseException handlerException(Exception e) {
+        return new ParseException("Exception in the handler", e);
+    }
 
     private final Lexer lexer;
     String parseError;

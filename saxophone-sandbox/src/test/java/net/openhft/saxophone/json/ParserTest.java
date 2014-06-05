@@ -19,6 +19,7 @@ package net.openhft.saxophone.json;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import net.openhft.lang.io.ByteBufferBytes;
+import net.openhft.saxophone.ParseException;
 import org.junit.Test;
 
 import java.io.StringWriter;

@@ -14,18 +14,15 @@
  * limitations under the License.
  */
 
-package net.openhft.saxophone.json;
+package net.openhft.saxophone;
 
 public final class ParseException extends RuntimeException {
-    static ParseException handlerException(Exception e) {
-        return new ParseException("Exception in the handler", e);
-    }
 
     public ParseException(String message) {
         super(message);
     }
 
-    private ParseException(String message, Throwable cause) {
-        super(cause);
+    public ParseException(String message, Throwable cause) {
+        super(message, cause);
     }
 }
