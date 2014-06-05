@@ -22,9 +22,9 @@ import net.openhft.saxophone.json.handler.*;
 
 import java.util.*;
 
-public final class ParserBuilder {
+public final class JsonParserBuilder {
     
-    @NotNull private EnumSet<Option> options = EnumSet.noneOf(Option.class);
+    @NotNull private EnumSet<JsonOption> options = EnumSet.noneOf(JsonOption.class);
     @Nullable private ObjectStartHandler objectStartHandler = null;
     @Nullable private ObjectEndHandler objectEndHandler = null;
     @Nullable private ArrayStartHandler arrayStartHandler = null;
@@ -37,9 +37,9 @@ public final class ParserBuilder {
     @Nullable private IntegerHandler integerHandler = null;
     @Nullable private FloatingHandler floatingHandler = null;
 
-    public Parser build() {
+    public JsonParser build() {
         checkAnyHandlerNonNull();
-        return new Parser(options, objectStartHandler, objectEndHandler, arrayStartHandler,
+        return new JsonParser(options, objectStartHandler, objectEndHandler, arrayStartHandler,
                 arrayEndHandler, booleanHandler, nullHandler, stringHandler, objectKeyHandler,
                 numberHandler, integerHandler, floatingHandler);
     }
@@ -65,7 +65,7 @@ public final class ParserBuilder {
      *
      * @return the parser options as read-only set
      */
-    public Set<Option> options() {
+    public Set<JsonOption> options() {
         return Collections.unmodifiableSet(options);
     }
 
@@ -74,7 +74,7 @@ public final class ParserBuilder {
      * @param options parser options
      * @return a reference to this object
      */
-    public ParserBuilder options(Collection<Option> options) {
+    public JsonParserBuilder options(Collection<JsonOption> options) {
         this.options = EnumSet.copyOf(options);
         return this;
     }
@@ -85,13 +85,13 @@ public final class ParserBuilder {
      * @param rest the rest parser options
      * @return a reference to this object
      */
-    public ParserBuilder options(Option first, Option... rest) {
+    public JsonParserBuilder options(JsonOption first, JsonOption... rest) {
         this.options = EnumSet.of(first, rest);
         return this;
     }
 
-    public ParserBuilder clearOptions() {
-        options = EnumSet.noneOf(Option.class);
+    public JsonParserBuilder clearOptions() {
+        options = EnumSet.noneOf(JsonOption.class);
         return this;
     }
 
@@ -112,7 +112,7 @@ public final class ParserBuilder {
      * @throws java.lang.IllegalArgumentException if the adapter doesn't implement any
      *         of concrete handler interfaces
      */
-    public ParserBuilder applyAdapter(JsonHandlerBase a) {
+    public JsonParserBuilder applyAdapter(JsonHandlerBase a) {
         boolean applied = false;
         if (a instanceof ObjectStartHandler) { objectStartHandler((ObjectStartHandler) a); applied = true; }
         if (a instanceof ObjectEndHandler) { objectEndHandler((ObjectEndHandler) a); applied = true; }
@@ -135,7 +135,7 @@ public final class ParserBuilder {
         return objectStartHandler;
     }
 
-    public ParserBuilder objectStartHandler(@Nullable ObjectStartHandler objectStartHandler) {
+    public JsonParserBuilder objectStartHandler(@Nullable ObjectStartHandler objectStartHandler) {
         this.objectStartHandler = objectStartHandler;
         return this;
     }
@@ -145,7 +145,7 @@ public final class ParserBuilder {
         return objectEndHandler;
     }
 
-    public ParserBuilder objectEndHandler(@Nullable ObjectEndHandler objectEndHandler) {
+    public JsonParserBuilder objectEndHandler(@Nullable ObjectEndHandler objectEndHandler) {
         this.objectEndHandler = objectEndHandler;
         return this;
     }
@@ -155,7 +155,7 @@ public final class ParserBuilder {
         return arrayStartHandler;
     }
 
-    public ParserBuilder arrayStartHandler(@Nullable ArrayStartHandler arrayStartHandler) {
+    public JsonParserBuilder arrayStartHandler(@Nullable ArrayStartHandler arrayStartHandler) {
         this.arrayStartHandler = arrayStartHandler;
         return this;
     }
@@ -165,7 +165,7 @@ public final class ParserBuilder {
         return arrayEndHandler;
     }
 
-    public ParserBuilder arrayEndHandler(@Nullable ArrayEndHandler arrayEndHandler) {
+    public JsonParserBuilder arrayEndHandler(@Nullable ArrayEndHandler arrayEndHandler) {
         this.arrayEndHandler = arrayEndHandler;
         return this;
     }
@@ -175,7 +175,7 @@ public final class ParserBuilder {
         return booleanHandler;
     }
 
-    public ParserBuilder booleanHandler(@Nullable BooleanHandler booleanHandler) {
+    public JsonParserBuilder booleanHandler(@Nullable BooleanHandler booleanHandler) {
         this.booleanHandler = booleanHandler;
         return this;
     }
@@ -185,7 +185,7 @@ public final class ParserBuilder {
         return nullHandler;
     }
 
-    public ParserBuilder nullHandler(@Nullable NullHandler nullHandler) {
+    public JsonParserBuilder nullHandler(@Nullable NullHandler nullHandler) {
         this.nullHandler = nullHandler;
         return this;
     }
@@ -195,7 +195,7 @@ public final class ParserBuilder {
         return stringHandler;
     }
 
-    public ParserBuilder stringHandler(@Nullable StringHandler stringHandler) {
+    public JsonParserBuilder stringHandler(@Nullable StringHandler stringHandler) {
         this.stringHandler = stringHandler;
         return this;
     }
@@ -205,7 +205,7 @@ public final class ParserBuilder {
         return objectKeyHandler;
     }
 
-    public ParserBuilder objectKeyHandler(@Nullable ObjectKeyHandler objectKeyHandler) {
+    public JsonParserBuilder objectKeyHandler(@Nullable ObjectKeyHandler objectKeyHandler) {
         this.objectKeyHandler = objectKeyHandler;
         return this;
     }
@@ -215,7 +215,7 @@ public final class ParserBuilder {
         return numberHandler;
     }
 
-    public ParserBuilder numberHandler(@Nullable NumberHandler numberHandler) {
+    public JsonParserBuilder numberHandler(@Nullable NumberHandler numberHandler) {
         checkNoConflict(integerHandler, "integer", numberHandler, "number");
         checkNoConflict(floatingHandler, "floating", numberHandler, "number");
         this.numberHandler = numberHandler;
@@ -227,7 +227,7 @@ public final class ParserBuilder {
         return integerHandler;
     }
 
-    public ParserBuilder integerHandler(@Nullable IntegerHandler integerHandler) {
+    public JsonParserBuilder integerHandler(@Nullable IntegerHandler integerHandler) {
         checkNoConflict(integerHandler, "integer", numberHandler, "number");
         this.integerHandler = integerHandler;
         return this;
@@ -238,7 +238,7 @@ public final class ParserBuilder {
         return floatingHandler;
     }
 
-    public ParserBuilder floatingHandler(@Nullable FloatingHandler floatingHandler) {
+    public JsonParserBuilder floatingHandler(@Nullable FloatingHandler floatingHandler) {
         checkNoConflict(floatingHandler, "floating", numberHandler, "number");
         this.floatingHandler = floatingHandler;
         return this;

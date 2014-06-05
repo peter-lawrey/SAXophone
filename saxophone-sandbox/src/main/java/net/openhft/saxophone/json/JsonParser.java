@@ -27,11 +27,11 @@ import java.io.Closeable;
 import java.nio.ByteBuffer;
 import java.util.EnumSet;
 
-import static net.openhft.saxophone.json.Option.*;
+import static net.openhft.saxophone.json.JsonOption.*;
 import static net.openhft.saxophone.json.ParserState.*;
 import static net.openhft.saxophone.json.TokenType.*;
 
-public final class Parser implements Closeable {
+public final class JsonParser implements Closeable {
 
     /**
      * Porting note: this class approximately corresponds to src/yajl_parser.c, src/yajl_parser.h
@@ -49,7 +49,7 @@ public final class Parser implements Closeable {
     /** temporary storage for decoded strings */
     private final StringBuilder decodeBuf = new StringBuilder();
     private final ParserState.Stack stateStack;
-    private final EnumSet<Option> flags;
+    private final EnumSet<JsonOption> flags;
     private Bytes finishSpace;
 
     @Nullable private final ObjectStartHandler objectStartHandler;
@@ -151,14 +151,14 @@ public final class Parser implements Closeable {
     private final OnFloating onFloating = new OnFloating();
 
 
-    Parser(EnumSet<Option> flags,
-           @Nullable ObjectStartHandler objectStartHandler,
-           @Nullable ObjectEndHandler objectEndHandler,
-           @Nullable ArrayStartHandler arrayStartHandler, @Nullable ArrayEndHandler arrayEndHandler,
-           @Nullable BooleanHandler booleanHandler, @Nullable NullHandler nullHandler,
-           @Nullable StringHandler stringHandler, @Nullable ObjectKeyHandler objectKeyHandler,
-           @Nullable NumberHandler numberHandler, @Nullable IntegerHandler integerHandler,
-           @Nullable FloatingHandler floatingHandler) {
+    JsonParser(EnumSet<JsonOption> flags,
+               @Nullable ObjectStartHandler objectStartHandler,
+               @Nullable ObjectEndHandler objectEndHandler,
+               @Nullable ArrayStartHandler arrayStartHandler, @Nullable ArrayEndHandler arrayEndHandler,
+               @Nullable BooleanHandler booleanHandler, @Nullable NullHandler nullHandler,
+               @Nullable StringHandler stringHandler, @Nullable ObjectKeyHandler objectKeyHandler,
+               @Nullable NumberHandler numberHandler, @Nullable IntegerHandler integerHandler,
+               @Nullable FloatingHandler floatingHandler) {
         this.flags = flags;
         this.objectStartHandler = objectStartHandler;
         this.objectEndHandler = objectEndHandler;

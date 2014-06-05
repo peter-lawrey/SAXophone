@@ -17,7 +17,6 @@
 package net.openhft.saxophone.json;
 
 import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
 import net.openhft.lang.io.ByteBufferBytes;
 import net.openhft.saxophone.ParseException;
 import org.junit.Test;
@@ -28,7 +27,7 @@ import java.nio.ByteBuffer;
 
 import static org.junit.Assert.assertEquals;
 
-public final class ParserTest {
+public final class JsonParserTest {
 
     @Test
     public void testInts() {
@@ -104,14 +103,14 @@ public final class ParserTest {
 
     private void test(String json) {
         StringWriter stringWriter = new StringWriter();
-        Parser p = new ParserBuilder().applyAdapter(new WriterAdapter(stringWriter)).build();
+        JsonParser p = new JsonParserBuilder().applyAdapter(new WriterAdapter(stringWriter)).build();
         try {
             p.parse(new ByteBufferBytes(ByteBuffer.wrap(json.getBytes("UTF-8"))));
         } catch (UnsupportedEncodingException e) {
             throw new AssertionError(e);
         }
         p.close();
-        JsonParser parser = new JsonParser();
+        com.google.gson.JsonParser parser = new com.google.gson.JsonParser();
         JsonElement o1 = parser.parse(json);
         JsonElement o2 = parser.parse(stringWriter.toString());
         assertEquals(o1, o2);

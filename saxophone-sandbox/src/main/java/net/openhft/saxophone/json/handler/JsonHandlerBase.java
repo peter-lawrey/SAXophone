@@ -20,7 +20,7 @@ package net.openhft.saxophone.json.handler;
  * Common root of per-element handlers, without methods though.
  *
  * <p>Currently the only purpose of this interface - compile-time check of the adapter
- * in {@link net.openhft.saxophone.json.ParserBuilder#applyAdapter(JsonHandlerBase)} method.
+ * in {@link net.openhft.saxophone.json.JsonParserBuilder#applyAdapter(JsonHandlerBase)} method.
  */
 public interface JsonHandlerBase {
 }
