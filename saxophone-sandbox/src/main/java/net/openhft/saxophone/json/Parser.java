@@ -186,11 +186,9 @@ public final class Parser implements AutoCloseable {
         int first;
         long ret = (first = s.readByte(off)) - '0';
         if (ret < 0) {
-            assert first == '-' || first == '+';
-            if (first == '-') {
-                neg = true;
-                cutLim += 1;
-            }
+            assert first == '-';
+            neg = true;
+            cutLim += 1;
             off++;
             ret = s.readByte(off) - '0';
         } else if (ret == 0) {
