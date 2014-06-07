@@ -120,6 +120,35 @@ public final class JsonParserTest {
         testPull(WRONG_NESTED_ARRAYS);
     }
 
+    /** To test the ability of state stack to grow */
+    @Test
+    public void testVeryDeepStructure() {
+        String json = "";
+        // our parser parses even 10000 nested objects, but
+        // "reference" Gson parser fails with StackOverflowError
+        for (int i = 0; i < 1000; i++) {
+            json += "{\"\":[";
+        }
+        for (int i = 0; i < 1000; i++) {
+            json += "]}";
+        }
+        test(json);
+    }
+
+    /** To test the ability of lexer buf to grow */
+    @Test
+    public void testVeryLongLiterals() {
+        String key = "";
+        for (int i = 0; i < 10000; i++) {
+            key += "key";
+        }
+        String value = "";
+        for (int i = 0; i < 10000; i++) {
+            key += "value";
+        }
+        test("{\"" + key + "\": \"" + value + "\"}");
+    }
+
     private void test(String json) {
         testSimple(json);
         testPull(json);
