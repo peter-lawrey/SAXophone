@@ -44,8 +44,8 @@ final class Buf extends DirectBytes {
                 startAddr = store.address();
                 positionAddr = startAddr + pos;
                 limitAddr = startAddr + limit;
-                capacityAddr = startAddr + store.size();
             }
+            capacityAddr = startAddr + store.size();
         }
     }
 
