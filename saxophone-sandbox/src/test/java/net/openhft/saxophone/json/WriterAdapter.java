@@ -23,7 +23,9 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.Writer;
 
-final class WriterAdapter implements JsonHandler, Closeable {
+final class WriterAdapter implements ObjectStartHandler, ObjectEndHandler,
+        ArrayStartHandler, ArrayEndHandler, BooleanHandler, NullHandler, StringValueHandler,
+        ObjectKeyHandler, IntegerHandler, FloatingHandler, Closeable {
     private final JsonWriter writer;
 
     WriterAdapter(Writer writer) {
@@ -86,7 +88,7 @@ final class WriterAdapter implements JsonHandler, Closeable {
     }
 
     @Override
-    public boolean onString(CharSequence value) throws Exception {
+    public boolean onStringValue(CharSequence value) throws Exception {
         writer.value(value.toString());
         return true;
     }

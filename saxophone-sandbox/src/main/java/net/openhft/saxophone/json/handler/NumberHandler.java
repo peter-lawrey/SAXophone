@@ -16,6 +16,30 @@
 
 package net.openhft.saxophone.json.handler;
 
+/**
+ * Triggered on JSON array, object or standalone (top-level) number value: for example,
+ * {@code `3.14`}, {@code `9.223372E-18`}, {@code `-1`}, {@code `0`}
+ * or {@code `9223372036854775807`}.
+ *
+ * <p>Use this handler, if the JSON input might contain integer values lesser
+ * than {@code Long.MIN_VALUE} or greater than {@code Long.MAX_VALUE}, or very precise floating
+ * values and your need this precision, or you don't need to parse a number to the native form,
+ * for example for pretty printing JSON or sending it in text format.
+ * {@link net.openhft.saxophone.json.JsonParser} can't have a {@code NumberHandler}
+ * and {@code IntegerHandler} or {@code NumberHandler} and {@code FloatingHandler} simultaneously.
+ *
+ * @see net.openhft.saxophone.json.JsonParserBuilder#numberHandler(NumberHandler)
+ */
 public interface NumberHandler extends JsonHandlerBase {
+    /**
+     * Handles a JSON array, object or standalone (top-level) number value: for example,
+     * {@code `3.14`}, {@code `9.223372E-18`}, {@code `-1`}, {@code `0`}
+     * or {@code `9223372036854775807`}.
+     *
+     * @param number the number value as a {@code CharSequence}
+     * @return {@code true} if the parsing should be continued, {@code false} if it should be
+     *         stopped immediately
+     * @throws Exception if an error occurred during handling
+     */
     boolean onNumber(CharSequence number) throws Exception;
 }

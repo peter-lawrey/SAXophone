@@ -16,6 +16,18 @@
 
 package net.openhft.saxophone.json.handler;
 
+/**
+ * Triggered on JSON array, object or standalone (top-level) null value: {@code `null`}.
+ *
+ * @see net.openhft.saxophone.json.JsonParserBuilder#nullHandler(NullHandler)
+ */
 public interface NullHandler extends JsonHandlerBase {
+    /**
+     * Handles a JSON array, object or standalone (top-level) null value: {@code `null`}.
+     *
+     * @return {@code true} if the parsing should be continued, {@code false} if it should be
+     *         stopped immediately
+     * @throws Exception if an error occurred during handling
+     */
     boolean onNull() throws Exception;
 }

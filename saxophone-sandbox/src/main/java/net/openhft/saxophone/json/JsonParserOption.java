@@ -17,6 +17,13 @@
 
 package net.openhft.saxophone.json;
 
+/**
+ * Options passed to {@code JsonParserBuilder} on {@link JsonParser} construction specify what
+ * input is considered as "valid" JSON, i. e. don't cause
+ * {@link net.openhft.saxophone.ParseException}.
+ *
+ * @see JsonParserBuilder#options(JsonParserOption, JsonParserOption...)
+ */
 public enum JsonParserOption {
 
     /**
@@ -24,42 +31,28 @@ public enum JsonParserOption {
      */
 
     /**
-     * Ignore javascript style comments present in
-     * JSON input.  Non-standard, but rather fun
-     * arguments: toggled off with integer zero, on otherwise.
+     * Ignore JavaScript-style comments present in JSON input. Non-standard, but rather fun.
+     *
+     * <p>Examples: <pre>{@code
+     * {
+     *     "foo": 1, // comment till the end of line
+     *     "bar": /&#42; inline comment &#42;/ 2
+     * }
+     * }</pre>
      */
     ALLOW_COMMENTS,
     /**
-     * When set the parser will verify that all strings in JSON input are
-     * valid UTF8 and will emit a parse error if this is not so.  When set,
-     * this option makes parsing slightly more expensive (~7% depending
-     * on processor and compiler in use)
+     * When this option is set, the {@code JsonParser} will verify that all strings in JSON input
+     * are valid UTF8 and will emit a {@code ParseException} if this is not so. When set,
+     * this option makes parsing slightly more expensive (~7% depending on processor and compiler
+     * in use).
      */
     DONT_VALIDATE_STRINGS,
     /**
-     * By default, upon calls to yajl_complete_parse(), yajl will
-     * ensure the entire input text was consumed and will raise an error
-     * otherwise.  Enabling this flag will cause yajl to disable this
-     * check.  This can be useful when parsing json out of a that contains more
-     * than a single JSON document.
-     */
-    ALLOW_TRAILING_GARBAGE,
-    /**
-     * Allow multiple values to be parsed by a single handle.  The
-     * entire text must be valid JSON, and values can be separated
-     * by any kind of whitespace.  This flag will change the
-     * behavior of the parser, and cause it continue parsing after
-     * a value is parsed, rather than transitioning into a
-     * complete state.  This option can be useful when parsing multiple
-     * values from an input stream.
-     */
-    ALLOW_MULTIPLE_VALUES,
-    /**
-     * When yajl_complete_parse() is called the parser will
-     * check that the top level value was completely consumed.  I.E.,
-     * if called whilst in the middle of parsing a value
-     * yajl will enter an error state (premature EOF).  Setting this
-     * flag suppresses that check and the corresponding error.
+     * When {@link JsonParser#parse(net.openhft.lang.io.Bytes)} is called the parser will
+     * check that the top level value was completely consumed. I. e., if called whilst in the middle
+     * of parsing a value yajl will throw a {@code ParseException}. Setting this
+     * option suppresses that check and the corresponding exception.
      */
     ALLOW_PARTIAL_VALUES
 }

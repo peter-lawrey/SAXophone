@@ -16,6 +16,19 @@
 
 package net.openhft.saxophone.json.handler;
 
+/**
+ * Triggered on JSON object key: for example, {@code `"foo"`} or {@code `""`}.
+ *
+ * @see net.openhft.saxophone.json.JsonParserBuilder#objectKeyHandler(ObjectKeyHandler)
+ */
 public interface ObjectKeyHandler extends JsonHandlerBase {
+    /**
+     * Handles a JSON object key: for example, {@code `"foo"`} or {@code `""`}.
+     *
+     * @param key the object key
+     * @return {@code true} if the parsing should be continued, {@code false} if it should be
+     *         stopped immediately
+     * @throws Exception if an error occurred during handling
+     */
     boolean onObjectKey(CharSequence key) throws Exception;
 }

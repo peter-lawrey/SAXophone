@@ -18,6 +18,7 @@ package net.openhft.saxophone.json;
 
 import com.google.gson.JsonElement;
 import net.openhft.lang.io.ByteBufferBytes;
+import net.openhft.lang.io.Bytes;
 import net.openhft.saxophone.ParseException;
 import org.junit.Test;
 
@@ -32,6 +33,14 @@ public final class JsonParserTest {
     public static final String WRONG_NESTED_ARRAYS = "[[], [[[]]";
     public static final String BEYOND_MAX_LONG = "9223372036854775808";
     public static final String BEYOND_MIN_LONG = "-9223372036854775809";
+
+    public static Bytes stringToBytes(String json) {
+        try {
+            return new ByteBufferBytes(wrap(json.getBytes("UTF-8")));
+        } catch (UnsupportedEncodingException e) {
+            throw new AssertionError(e);
+        }
+    }
 
     @Test
     public void testInts() {
@@ -157,11 +166,7 @@ public final class JsonParserTest {
     private void testSimple(String json) {
         StringWriter stringWriter = new StringWriter();
         JsonParser p = JsonParser.builder().applyAdapter(new WriterAdapter(stringWriter)).build();
-        try {
-            p.parse(new ByteBufferBytes(wrap(json.getBytes("UTF-8"))));
-        } catch (UnsupportedEncodingException e) {
-            throw new AssertionError(e);
-        }
+        p.parse(stringToBytes(json));
         p.finish();
         com.google.gson.JsonParser referenceParser = new com.google.gson.JsonParser();
         JsonElement o1 = referenceParser.parse(json);
@@ -172,13 +177,9 @@ public final class JsonParserTest {
     private void testPull(String json) {
         StringWriter stringWriter = new StringWriter();
         JsonParser p = JsonParser.builder().applyAdapter(new WriterAdapter(stringWriter)).build();
-        try {
-            ByteBufferBytes jsonBytes = new ByteBufferBytes(wrap(json.getBytes("UTF-8")));
-            for (long i = 0; i < jsonBytes.capacity(); i++) {
-                p.parse(jsonBytes.bytes(i, 1));
-            }
-        } catch (UnsupportedEncodingException e) {
-            throw new AssertionError(e);
+        Bytes jsonBytes = stringToBytes(json);
+        for (long i = 0; i < jsonBytes.capacity(); i++) {
+            p.parse(jsonBytes.bytes(i, 1));
         }
         p.finish();
         com.google.gson.JsonParser referenceParser = new com.google.gson.JsonParser();

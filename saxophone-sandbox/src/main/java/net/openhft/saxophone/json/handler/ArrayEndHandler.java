@@ -16,6 +16,18 @@
 
 package net.openhft.saxophone.json.handler;
 
+/**
+ * Triggered on JSON array end bracket: {@code `]`}.
+ *
+ * @see net.openhft.saxophone.json.JsonParserBuilder#arrayEndHandler(ArrayEndHandler)
+ */
 public interface ArrayEndHandler extends JsonHandlerBase {
+    /**
+     * Handles a JSON array end bracket: {@code `]`}.
+     *
+     * @return {@code true} if the parsing should be continued, {@code false} if it should be
+     *         stopped immediately
+     * @throws Exception if an error occurred during handling
+     */
     boolean onArrayEnd() throws Exception;
 }

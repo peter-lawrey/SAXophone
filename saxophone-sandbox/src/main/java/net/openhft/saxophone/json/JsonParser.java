@@ -27,6 +27,8 @@ import java.nio.ByteBuffer;
 import java.util.EnumSet;
 
 import static net.openhft.saxophone.json.JsonParserOption.*;
+import static net.openhft.saxophone.json.JsonParserTopLevelStrategy.ALLOW_MULTIPLE_VALUES;
+import static net.openhft.saxophone.json.JsonParserTopLevelStrategy.ALLOW_TRAILING_GARBAGE;
 import static net.openhft.saxophone.json.ParserState.*;
 import static net.openhft.saxophone.json.TokenType.*;
 
@@ -37,24 +39,29 @@ import static net.openhft.saxophone.json.TokenType.*;
  * Parser.builder().applyAdapter(eventHandler).options(...).build();
  * }</pre>
  *
- * <p>Try to reuse the parser, because it's allocation cost is pretty high. It's safe and valid to
- * use the parser just like newly created one after {@link #finish()} or {@link #reset()} calls.
+ * <p><a name="reuse"></a>
+ * Try to reuse the parser, because it's allocation cost is pretty high. It's safe and valid to
+ * use the parser just like newly created one after a {@link #reset()} call.
  * To reset handlers' state on parser reset, implement and provide
- * {@link net.openhft.saxophone.json.handler.ResetHandler}.
+ * {@link net.openhft.saxophone.json.handler.ResetHook}.
  *
- * <p>Example usage: <pre>{@code
+ * Example usage: <pre>{@code
  * class Foo {
  *     JsonParser parser = ...;
  *
  *     // return true if parsing succeed
  *     boolean parse(Iterator<Bytes> chunks) {
- *         while (chunks.hasNext()) {
- *             if (!parser.parse(chunks.next())) {
- *                 parser.reset();
- *                 return false;
+ *         try {
+ *             while (chunks.hasNext()) {
+ *                 if (!parser.parse(chunks.next())) {
+ *                     parser.reset();
+ *                     return false;
+ *                 }
  *             }
+ *             return parser.finish();
+ *         } finally {
+ *             parser.reset();
  *         }
- *         return parser.finish();
  *     }
  * }
  * }</pre>
@@ -63,25 +70,30 @@ import static net.openhft.saxophone.json.TokenType.*;
  * ...
  * boolean parse(Iterator<Bytes> chunks) throws IOException {
  *     try {
- *         while (chunks.hasNext()) {
- *             if (!parser.parse(chunks.next())) {
- *                 parser.reset();
+ *         try {
+ *             while (chunks.hasNext()) {
+ *                 if (!parser.parse(chunks.next())) {
+ *                     parser.reset();
+ *                     return false;
+ *                 }
+ *             }
+ *             return parser.finish();
+ *         } catch (ParseException e) {
+ *             Throwable cause = e.getCause();
+ *             if (cause instanceof IOException) {
+ *                 throw (IOException) cause;
+ *             } else {
+ *                 System.err.println("Json is malformed!");
  *                 return false;
  *             }
  *         }
- *         return parser.finish();
- *     } catch (ParseException e) {
+ *     } finally {
  *         parser.reset();
- *         Throwable cause = e.getCause();
- *         if (cause instanceof IOException) {
- *             throw (IOException) cause;
- *         } else {
- *             System.err.println("Json is malformed!");
- *             return false;
- *         }
  *     }
  * }
  * }</pre>
+ *
+ * @see #builder()
  */
 public final class JsonParser {
 
@@ -92,6 +104,15 @@ public final class JsonParser {
      * I tried to preserve method order and names to ease side-to-side comparison.
      */
 
+    /**
+     * Return a new parser builder.
+     *
+     * <p>There are no public constructors of {@code JsonParser} at the moment, and likely won't
+     * be, so configuring a builder and then call {@link JsonParserBuilder#build()}
+     * is the only way to construct the parser.
+     *
+     * @return a new parser builder
+     */
     public static JsonParserBuilder builder() {
         return new JsonParserBuilder();
     }
@@ -102,6 +123,7 @@ public final class JsonParser {
     private final StringBuilder decodeBuf = new StringBuilder();
     private final ParserState.Stack stateStack;
     private final EnumSet<JsonParserOption> flags;
+    private final JsonParserTopLevelStrategy topLevelStrategy;
     private Bytes finishSpace;
 
     @Nullable private final ObjectStartHandler objectStartHandler;
@@ -110,12 +132,12 @@ public final class JsonParser {
     @Nullable private final ArrayEndHandler arrayEndHandler;
     @Nullable private final BooleanHandler booleanHandler;
     @Nullable private final NullHandler nullHandler;
-    @Nullable private final StringHandler stringHandler;
+    @Nullable private final StringValueHandler stringValueHandler;
     @Nullable private final ObjectKeyHandler objectKeyHandler;
     @Nullable private final NumberHandler numberHandler;
     @Nullable private final IntegerHandler integerHandler;
     @Nullable private final FloatingHandler floatingHandler;
-    @Nullable private final ResetHandler resetHandler;
+    @Nullable private final ResetHook resetHook;
 
     private class OnString {
         boolean on() throws Exception {
@@ -146,8 +168,8 @@ public final class JsonParser {
         }
 
         boolean apply(CharSequence value) throws Exception {
-            assert stringHandler != null;
-            return stringHandler.onString(value);
+            assert stringValueHandler != null;
+            return stringValueHandler.onStringValue(value);
         }
     }
 
@@ -205,28 +227,33 @@ public final class JsonParser {
 
 
     JsonParser(EnumSet<JsonParserOption> flags,
+               JsonParserTopLevelStrategy topLevelStrategy,
                @Nullable ObjectStartHandler objectStartHandler,
                @Nullable ObjectEndHandler objectEndHandler,
                @Nullable ArrayStartHandler arrayStartHandler,
                @Nullable ArrayEndHandler arrayEndHandler,
-               @Nullable BooleanHandler booleanHandler, @Nullable NullHandler nullHandler,
-               @Nullable StringHandler stringHandler, @Nullable ObjectKeyHandler objectKeyHandler,
-               @Nullable NumberHandler numberHandler, @Nullable IntegerHandler integerHandler,
+               @Nullable BooleanHandler booleanHandler,
+               @Nullable NullHandler nullHandler,
+               @Nullable StringValueHandler stringValueHandler,
+               @Nullable ObjectKeyHandler objectKeyHandler,
+               @Nullable NumberHandler numberHandler,
+               @Nullable IntegerHandler integerHandler,
                @Nullable FloatingHandler floatingHandler,
-               @Nullable ResetHandler resetHandler) {
+               @Nullable ResetHook resetHook) {
         this.flags = flags;
+        this.topLevelStrategy = topLevelStrategy;
         this.objectStartHandler = objectStartHandler;
         this.objectEndHandler = objectEndHandler;
         this.arrayStartHandler = arrayStartHandler;
         this.arrayEndHandler = arrayEndHandler;
         this.booleanHandler = booleanHandler;
         this.nullHandler = nullHandler;
-        this.stringHandler = stringHandler;
+        this.stringValueHandler = stringValueHandler;
         this.objectKeyHandler = objectKeyHandler;
         this.numberHandler = numberHandler;
         this.integerHandler = integerHandler;
         this.floatingHandler = floatingHandler;
-        this.resetHandler = resetHandler;
+        this.resetHook = resetHook;
 
         lexer = new Lexer(flags.contains(ALLOW_COMMENTS), !flags.contains(DONT_VALIDATE_STRINGS));
         stateStack = new Stack();
@@ -236,7 +263,7 @@ public final class JsonParser {
     /**
      * Resets the parser to clear "just like after construction" state.
      *
-     * <p>At the end {@link net.openhft.saxophone.json.handler.ResetHandler}, if provided,
+     * <p>At the end {@link net.openhft.saxophone.json.handler.ResetHook}, if provided,
      * is notified.
      *
      * <p>Reusing parsers is encouraged because parser allocation / garbage collection
@@ -247,8 +274,8 @@ public final class JsonParser {
         stateStack.clear();
         stateStack.push(START);
         parseError = null;
-        if (resetHandler != null)
-            resetHandler.onReset();
+        if (resetHook != null)
+            resetHook.onReset();
     }
 
     private long parseInteger(Bytes s, long off, long len) {
@@ -284,8 +311,7 @@ public final class JsonParser {
     }
 
     /**
-     * Processes the last token, if needed, and finally {@link #reset() resets} the parser
-     * (regardless if an exception is thrown in this call).
+     * Processes the last token.
      *
      * <p>If the JSON data portions given to {@link #parse(net.openhft.lang.io.Bytes)} method
      * by now since the previous {@link #reset()} call, or call of this method,
@@ -304,26 +330,22 @@ public final class JsonParser {
      *         greater than {@code Long.MAX_VALUE} or lesser than {@code Long.MIN_VALUE}
      * @throws IllegalStateException if parsing was cancelled or any exception was thrown
      *         in {@link #parse(net.openhft.lang.io.Bytes)} call after
-     *         the previous {@link #reset()} call, or call of this method, or parser construction
+     *         the previous {@link #reset()} call or parser construction
      */
     public boolean finish() {
-        try {
-            if (!parse(finishSpace())) return false;
+        if (!parse(finishSpace())) return false;
 
-            switch(stateStack.current()) {
-                case PARSE_ERROR:
-                case LEXICAL_ERROR:
-                case HANDLER_CANCEL:
-                case HANDLER_EXCEPTION:
-                    throw new AssertionError("exception should be thrown directly from parse()");
-                case GOT_VALUE:
-                case PARSE_COMPLETE:
-                    return true;
-                default:
-                    return flags.contains(ALLOW_PARTIAL_VALUES) || parseError("premature EOF");
-            }
-        } finally {
-            reset();
+        switch(stateStack.current()) {
+            case PARSE_ERROR:
+            case LEXICAL_ERROR:
+            case HANDLER_CANCEL:
+            case HANDLER_EXCEPTION:
+                throw new AssertionError("exception should be thrown directly from parse()");
+            case GOT_VALUE:
+            case PARSE_COMPLETE:
+                return true;
+            default:
+                return flags.contains(ALLOW_PARTIAL_VALUES) || parseError("premature EOF");
         }
     }
 
@@ -338,7 +360,8 @@ public final class JsonParser {
      * Parses a portion of JSON from the given {@code Bytes} from it's
      * {@link net.openhft.lang.io.Bytes#position() position} to
      * {@link net.openhft.lang.io.Bytes#limit() limit}. Position is incremented until there are
-     * no {@link net.openhft.lang.io.Bytes#remaining() remaining} bytes.
+     * no {@link net.openhft.lang.io.Bytes#remaining() remaining} bytes or a single top-level
+     * JSON object is parsed and {@link JsonParserTopLevelStrategy#ALLOW_TRAILING_GARBAGE} is set.
      *
      * <p>As this is a pull parser, the given JSON text may break at any character. If the
      * {@link net.openhft.saxophone.json.JsonParserOption#ALLOW_PARTIAL_VALUES} is not set,
@@ -366,8 +389,7 @@ public final class JsonParser {
      *         integer value is out of primitive {@code long} range:
      *         greater than {@code Long.MAX_VALUE} or lesser than {@code Long.MIN_VALUE}
      * @throws IllegalStateException if parsing was cancelled or any exception was thrown
-     *         in this method after the previous {@link #reset()} or {@link #finish()} call or
-     *         parser construction
+     *         in this method after the previous {@link #reset()} call or parser construction
      */
     public boolean parse(Bytes jsonText) {
         TokenType tok;
@@ -378,11 +400,11 @@ public final class JsonParser {
         while (true) {
             switch (stateStack.current()) {
                 case PARSE_COMPLETE:
-                    if (flags.contains(ALLOW_MULTIPLE_VALUES)) {
+                    if (topLevelStrategy == ALLOW_MULTIPLE_VALUES) {
                         stateStack.set(GOT_VALUE);
                         continue around_again;
                     }
-                    if (!flags.contains(ALLOW_TRAILING_GARBAGE)) {
+                    if (topLevelStrategy != ALLOW_TRAILING_GARBAGE) {
                         if (jsonText.remaining() > 0) {
                             tok = lexer.lex(jsonText);
                             if (tok != EOF) {
@@ -421,7 +443,7 @@ public final class JsonParser {
                         case ERROR:
                             lexicalError();
                         case STRING:
-                            if (stringHandler != null) {
+                            if (stringValueHandler != null) {
                                 try {
                                     if (!onString.on()) {
                                         stateStack.set(HANDLER_CANCEL);
@@ -433,7 +455,7 @@ public final class JsonParser {
                             }
                             break;
                         case STRING_WITH_ESCAPES:
-                            if (stringHandler != null) {
+                            if (stringValueHandler != null) {
                                 try {
                                     if (!onEscapedString.on()) {
                                         stateStack.set(HANDLER_CANCEL);
@@ -497,7 +519,7 @@ public final class JsonParser {
                             break;
                         case INTEGER:
                             if (numberHandler != null) {
-                                if (stringHandler != null) {
+                                if (stringValueHandler != null) {
                                     try {
                                         if (!onNumber.on()) {
                                             stateStack.set(HANDLER_CANCEL);
@@ -524,7 +546,7 @@ public final class JsonParser {
                             break;
                         case DOUBLE:
                             if (numberHandler != null) {
-                                if (stringHandler != null) {
+                                if (stringValueHandler != null) {
                                     try {
                                         if (!onNumber.on()) {
                                             stateStack.set(HANDLER_CANCEL);

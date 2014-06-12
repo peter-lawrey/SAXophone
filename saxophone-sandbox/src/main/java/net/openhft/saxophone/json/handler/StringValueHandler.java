@@ -17,17 +17,20 @@
 package net.openhft.saxophone.json.handler;
 
 /**
- * Triggered on JSON object start brace: {@code `&#123;`}.
+ * Triggered on JSON array, object or standalone (top-level) string value: for example,
+ * {@code `"foo"`} or {@code `""`}.
  *
- * @see net.openhft.saxophone.json.JsonParserBuilder#objectStartHandler(ObjectStartHandler)
+ * @see net.openhft.saxophone.json.JsonParserBuilder#stringValueHandler(StringValueHandler)
  */
-public interface ObjectStartHandler extends JsonHandlerBase {
+public interface StringValueHandler extends JsonHandlerBase {
     /**
-     * Handles a JSON object start brace: {@code `&#123;`}.
+     * Handles a JSON array, object or standalone (top-level) string value: for example,
+     * {@code `"foo"`} or {@code `""`}.
      *
+     * @param value the string value
      * @return {@code true} if the parsing should be continued, {@code false} if it should be
      *         stopped immediately
      * @throws Exception if an error occurred during handling
      */
-    boolean onObjectStart() throws Exception;
+    boolean onStringValue(CharSequence value) throws Exception;
 }

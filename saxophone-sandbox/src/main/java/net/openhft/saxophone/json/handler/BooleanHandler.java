@@ -16,6 +16,21 @@
 
 package net.openhft.saxophone.json.handler;
 
+/**
+ * Triggered on JSON array, object or standalone (top-level) boolean value:
+ * {@code `true`} or {@code `false`}.
+ *
+ * @see net.openhft.saxophone.json.JsonParserBuilder#booleanHandler(BooleanHandler)
+ */
 public interface BooleanHandler extends JsonHandlerBase {
+    /**
+     * Handles a JSON array, object or standalone (top-level) boolean value:
+     * {@code `true`} or {@code `false`}.
+     *
+     * @param value the boolean value
+     * @return {@code true} if the parsing should be continued, {@code false} if it should be
+     *         stopped immediately
+     * @throws Exception if an error occurred during handling
+     */
     boolean onBoolean(boolean value) throws Exception;
 }
