@@ -124,6 +124,7 @@ public final class JsonParser {
     private final ParserState.Stack stateStack;
     private final EnumSet<JsonParserOption> flags;
     private final JsonParserTopLevelStrategy topLevelStrategy;
+    private final boolean eachTokenMustBeHandled;
     private Bytes finishSpace;
 
     @Nullable private final ObjectStartHandler objectStartHandler;
@@ -228,6 +229,7 @@ public final class JsonParser {
 
     JsonParser(EnumSet<JsonParserOption> flags,
                JsonParserTopLevelStrategy topLevelStrategy,
+               boolean eachTokenMustBeHandled,
                @Nullable ObjectStartHandler objectStartHandler,
                @Nullable ObjectEndHandler objectEndHandler,
                @Nullable ArrayStartHandler arrayStartHandler,
@@ -242,6 +244,7 @@ public final class JsonParser {
                @Nullable ResetHook resetHook) {
         this.flags = flags;
         this.topLevelStrategy = topLevelStrategy;
+        this.eachTokenMustBeHandled = eachTokenMustBeHandled;
         this.objectStartHandler = objectStartHandler;
         this.objectEndHandler = objectEndHandler;
         this.arrayStartHandler = arrayStartHandler;
@@ -389,7 +392,9 @@ public final class JsonParser {
      *         integer value is out of primitive {@code long} range:
      *         greater than {@code Long.MAX_VALUE} or lesser than {@code Long.MIN_VALUE}
      * @throws IllegalStateException if parsing was cancelled or any exception was thrown
-     *         in this method after the previous {@link #reset()} call or parser construction
+     *         in this method after the previous {@link #reset()} call or parser construction,
+     *         or if the input JSON contains a token without corresponding handler assigned,
+     *         and {@link JsonParserBuilder#eachTokenMustBeHandled()} is set to {@code true}.
      */
     public boolean parse(Bytes jsonText) {
         TokenType tok;
@@ -452,6 +457,8 @@ public final class JsonParser {
                                 } catch (Exception e) {
                                     return handlerError(e);
                                 }
+                            } else {
+                                checkTokenCouldBePassed(tok);
                             }
                             break;
                         case STRING_WITH_ESCAPES:
@@ -464,6 +471,8 @@ public final class JsonParser {
                                 } catch (Exception e) {
                                     return handlerError(e);
                                 }
+                            } else {
+                                checkTokenCouldBePassed(STRING);
                             }
                             break;
                         case BOOL:
@@ -477,6 +486,8 @@ public final class JsonParser {
                                 } catch (Exception e) {
                                     return handlerError(e);
                                 }
+                            } else {
+                                checkTokenCouldBePassed(tok);
                             }
                             break;
                         case NULL:
@@ -489,6 +500,8 @@ public final class JsonParser {
                                 } catch (Exception e) {
                                     return handlerError(e);
                                 }
+                            } else {
+                                checkTokenCouldBePassed(tok);
                             }
                             break;
                         case LEFT_BRACKET:
@@ -501,6 +514,8 @@ public final class JsonParser {
                                 } catch (Exception e) {
                                     return handlerError(e);
                                 }
+                            } else {
+                                checkTokenCouldBePassed(tok);
                             }
                             stateToPush = MAP_START;
                             break;
@@ -514,6 +529,8 @@ public final class JsonParser {
                                 } catch (Exception e) {
                                     return handlerError(e);
                                 }
+                            } else {
+                                checkTokenCouldBePassed(tok);
                             }
                             stateToPush = ARRAY_START;
                             break;
@@ -540,6 +557,8 @@ public final class JsonParser {
                                 } catch (Exception e) {
                                     return handlerError(e);
                                 }
+                            } else {
+                                checkTokenCouldBePassed(tok);
                             }
                             break;
                         case DOUBLE:
@@ -564,6 +583,8 @@ public final class JsonParser {
                                 } catch (Exception e) {
                                     return handlerError(e);
                                 }
+                            } else {
+                                checkTokenCouldBePassed(tok);
                             }
                             break;
                         case RIGHT_BRACE: {
@@ -577,6 +598,8 @@ public final class JsonParser {
                                     } catch (Exception e) {
                                         return handlerError(e);
                                     }
+                                } else {
+                                    checkTokenCouldBePassed(tok);
                                 }
                                 stateStack.pop();
                                 continue around_again;
@@ -632,6 +655,8 @@ public final class JsonParser {
                                 } catch (Exception e) {
                                     return handlerError(e);
                                 }
+                            } else {
+                                checkTokenCouldBePassed(STRING);
                             }
                             stateStack.set(MAP_SEP);
                             continue around_again;
@@ -646,6 +671,8 @@ public final class JsonParser {
                                     } catch (Exception e) {
                                         return handlerError(e);
                                     }
+                                } else {
+                                    checkTokenCouldBePassed(tok);
                                 }
                                 stateStack.pop();
                                 continue around_again;
@@ -683,6 +710,8 @@ public final class JsonParser {
                                 } catch (Exception e) {
                                     return handlerError(e);
                                 }
+                            } else {
+                                checkTokenCouldBePassed(tok);
                             }
                             stateStack.pop();
                             continue around_again;
@@ -712,6 +741,8 @@ public final class JsonParser {
                                 } catch (Exception e) {
                                     return handlerError(e);
                                 }
+                            } else {
+                                checkTokenCouldBePassed(tok);
                             }
                             stateStack.pop();
                             continue around_again;
@@ -752,6 +783,15 @@ public final class JsonParser {
         stateStack.set(LEXICAL_ERROR);
         parseError = "lexical error: " + lexer.error;
         throw new ParseException(parseError);
+    }
+
+    private void checkTokenCouldBePassed(TokenType token) {
+        if (eachTokenMustBeHandled) {
+            stateStack.set(PARSE_ERROR);
+            parseError = token +
+                    " occurred in the input JSON, but corresponding handler is not assigned";
+            throw new IllegalStateException(parseError);
+        }
     }
 
     private void tryRestoreErrorEffect(Bytes jsonText, long startOffset) {

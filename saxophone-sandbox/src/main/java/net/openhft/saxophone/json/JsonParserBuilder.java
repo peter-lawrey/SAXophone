@@ -170,6 +170,7 @@ public final class JsonParserBuilder {
     
     @NotNull private EnumSet<JsonParserOption> options = EnumSet.noneOf(JsonParserOption.class);
     @NotNull private JsonParserTopLevelStrategy topLevelStrategy = ALLOW_JUST_A_SINGLE_OBJECT;
+    private boolean eachTokenMustBeHandled = true;
     @Nullable private ObjectStartHandler objectStartHandler = null;
     @Nullable private ObjectEndHandler objectEndHandler = null;
     @Nullable private ArrayStartHandler arrayStartHandler = null;
@@ -195,9 +196,10 @@ public final class JsonParserBuilder {
      */
     public JsonParser build() {
         checkAnyTokenHandlerNonNull();
-        return new JsonParser(options, topLevelStrategy, objectStartHandler, objectEndHandler,
-                arrayStartHandler, arrayEndHandler, booleanHandler, nullHandler, stringValueHandler,
-                objectKeyHandler, numberHandler, integerHandler, floatingHandler, resetHook);
+        return new JsonParser(options, topLevelStrategy, eachTokenMustBeHandled,
+                objectStartHandler, objectEndHandler, arrayStartHandler, arrayEndHandler,
+                booleanHandler, nullHandler, stringValueHandler, objectKeyHandler, numberHandler,
+                integerHandler, floatingHandler, resetHook);
     }
 
     private void checkAnyTokenHandlerNonNull() {
@@ -279,6 +281,29 @@ public final class JsonParserBuilder {
     public JsonParserBuilder topLevelStrategy(
             @NotNull JsonParserTopLevelStrategy topLevelStrategy) {
         this.topLevelStrategy = topLevelStrategy;
+        return this;
+    }
+
+    /**
+     * Returns if each input JSON token must be handled, {@code true} by default.
+     *
+     * @return if each input JSON token must be handled
+     */
+    public boolean eachTokenMustBeHandled() {
+        return eachTokenMustBeHandled;
+    }
+
+    /**
+     * Sets if each input JSON token must be handled. If so, when the parser see the token, but
+     * the corresponding handler is absent, {@code IllegalStateException} is thrown. Otherwise,
+     * this situation of silently ignored. The profit of the latter behaviour - the parser can skip
+     * unneeded tokens to speed up. But it is error-prone.
+     *
+     * @param eachTokenMustBeHandled if each input JSON token must be handled
+     * @return a reference to this builder
+     */
+    public JsonParserBuilder eachTokenMustBeHandled(boolean eachTokenMustBeHandled) {
+        this.eachTokenMustBeHandled = eachTokenMustBeHandled;
         return this;
     }
 
