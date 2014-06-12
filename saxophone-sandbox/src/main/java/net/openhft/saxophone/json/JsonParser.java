@@ -519,15 +519,13 @@ public final class JsonParser {
                             break;
                         case INTEGER:
                             if (numberHandler != null) {
-                                if (stringValueHandler != null) {
-                                    try {
-                                        if (!onNumber.on()) {
-                                            stateStack.set(HANDLER_CANCEL);
-                                            return false;
-                                        }
-                                    } catch (Exception e) {
-                                        return handlerError(e);
+                                try {
+                                    if (!onNumber.on()) {
+                                        stateStack.set(HANDLER_CANCEL);
+                                        return false;
                                     }
+                                } catch (Exception e) {
+                                    return handlerError(e);
                                 }
                             } else if (integerHandler != null) {
                                 try {
@@ -546,15 +544,13 @@ public final class JsonParser {
                             break;
                         case DOUBLE:
                             if (numberHandler != null) {
-                                if (stringValueHandler != null) {
-                                    try {
-                                        if (!onNumber.on()) {
-                                            stateStack.set(HANDLER_CANCEL);
-                                            return false;
-                                        }
-                                    } catch (Exception e) {
-                                        return handlerError(e);
+                                try {
+                                    if (!onNumber.on()) {
+                                        stateStack.set(HANDLER_CANCEL);
+                                        return false;
                                     }
+                                } catch (Exception e) {
+                                    return handlerError(e);
                                 }
                             } else if (floatingHandler != null) {
                                 try {
