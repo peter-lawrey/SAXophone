@@ -29,7 +29,7 @@
     </parent>
 
     <artifactId>saxophone</artifactId>
-    <version>1.0.3</version>
+    <version>1.0.4-SNAPSHOT</version>
 
     <name>OpenHFT/saxophone</name>
     <description>Java SAX Parser for JSON and FIX</description>
@@ -99,7 +99,7 @@
         <url>scm:git:git@github.com:OpenHFT/SAXophone.git</url>
         <connection>scm:git:git@github.com:OpenHFT/SAXophone.git</connection>
         <developerConnection>scm:git:git@github.com:OpenHFT/SAXophone.git</developerConnection>
-        <tag>saxophone-1.0.3</tag>
+        <tag>master</tag>
     </scm>
 
 </project>
