@@ -20,11 +20,15 @@ import net.openhft.lang.model.constraints.NotNull;
 import net.openhft.lang.model.constraints.Nullable;
 import net.openhft.saxophone.json.handler.*;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.Set;
+
 import static net.openhft.saxophone.json.JsonParserTopLevelStrategy.ALLOW_JUST_A_SINGLE_OBJECT;
 
 /**
- * A builder of {@link JsonParser}. To obtain a new builder, call {@link JsonParser#builder()}
- * static method.
+ * A builder of {@link JsonParser}. To obtain a new builder, call {@link JsonParser#builder()} static method.
  *
  * <p>Example usage: <pre>{@code
  * public final class PrettyPrinter
@@ -165,31 +169,46 @@ import static net.openhft.saxophone.json.JsonParserTopLevelStrategy.ALLOW_JUST_A
  * @see JsonParser#builder()
  */
 public final class JsonParserBuilder {
-    
-    @NotNull private EnumSet<JsonParserOption> options = EnumSet.noneOf(JsonParserOption.class);
-    @NotNull private JsonParserTopLevelStrategy topLevelStrategy = ALLOW_JUST_A_SINGLE_OBJECT;
-    private boolean eachTokenMustBeHandled = true;
-    @Nullable private ObjectStartHandler objectStartHandler = null;
-    @Nullable private ObjectEndHandler objectEndHandler = null;
-    @Nullable private ArrayStartHandler arrayStartHandler = null;
-    @Nullable private ArrayEndHandler arrayEndHandler = null;
-    @Nullable private BooleanHandler booleanHandler = null;
-    @Nullable private NullHandler nullHandler = null;
-    @Nullable private StringValueHandler stringValueHandler = null;
-    @Nullable private ObjectKeyHandler objectKeyHandler = null;
-    @Nullable private NumberHandler numberHandler = null;
-    @Nullable private IntegerHandler integerHandler = null;
-    @Nullable private FloatingHandler floatingHandler = null;
-    @Nullable private ResetHook resetHook = null;
 
-    JsonParserBuilder() {}
+    @NotNull
+    private EnumSet<JsonParserOption> options = EnumSet.noneOf(JsonParserOption.class);
+    @NotNull
+    private JsonParserTopLevelStrategy topLevelStrategy = ALLOW_JUST_A_SINGLE_OBJECT;
+    private boolean eachTokenMustBeHandled = true;
+    @Nullable
+    private ObjectStartHandler objectStartHandler = null;
+    @Nullable
+    private ObjectEndHandler objectEndHandler = null;
+    @Nullable
+    private ArrayStartHandler arrayStartHandler = null;
+    @Nullable
+    private ArrayEndHandler arrayEndHandler = null;
+    @Nullable
+    private BooleanHandler booleanHandler = null;
+    @Nullable
+    private NullHandler nullHandler = null;
+    @Nullable
+    private StringValueHandler stringValueHandler = null;
+    @Nullable
+    private ObjectKeyHandler objectKeyHandler = null;
+    @Nullable
+    private NumberHandler numberHandler = null;
+    @Nullable
+    private IntegerHandler integerHandler = null;
+    @Nullable
+    private FloatingHandler floatingHandler = null;
+    @Nullable
+    private ResetHook resetHook = null;
+
+    JsonParserBuilder() {
+    }
 
     /**
      * Builds and returns a new {@code JsonParser} with the configured options and handlers.
-     * 
-     * <p>After construction a {@code JsonParser} don't depend on it's builder, so you can change
-     * the builder state and construct a different parser.
-     * 
+     *
+     * <p>After construction a {@code JsonParser} don't depend on it's builder, so you can change the builder
+     * state and construct a different parser.
+     *
      * @return a newly built {@code JsonParser}
      */
     public JsonParser build() {
@@ -217,8 +236,7 @@ public final class JsonParserBuilder {
     }
 
     /**
-     * Returns the parser options as read-only set.
-     * Initially there are no options (the set is empty).
+     * Returns the parser options as read-only set. Initially there are no options (the set is empty).
      *
      * @return the parser options as read-only set
      */
@@ -241,7 +259,7 @@ public final class JsonParserBuilder {
      * Sets the parser options. The previous options, if any, are discarded.
      *
      * @param first parser option
-     * @param rest the rest parser options
+     * @param rest  the rest parser options
      * @return a reference to this builder
      */
     public JsonParserBuilder options(JsonParserOption first, JsonParserOption... rest) {
@@ -251,7 +269,7 @@ public final class JsonParserBuilder {
 
     /**
      * Clears an option set. After this call {@link #options()} returns an empty set.
-     * 
+     *
      * @return a reference to this builder
      */
     public JsonParserBuilder clearOptions() {
@@ -292,10 +310,10 @@ public final class JsonParserBuilder {
     }
 
     /**
-     * Sets if each input JSON token must be handled. If so, when the parser see the token, but
-     * the corresponding handler is absent, {@code IllegalStateException} is thrown. Otherwise,
-     * this situation of silently ignored. The profit of the latter behaviour - the parser can skip
-     * unneeded tokens to speed up. But it is error-prone.
+     * Sets if each input JSON token must be handled. If so, when the parser see the token, but the
+     * corresponding handler is absent, {@code IllegalStateException} is thrown. Otherwise, this situation of
+     * silently ignored. The profit of the latter behaviour - the parser can skip unneeded tokens to speed up.
+     * But it is error-prone.
      *
      * @param eachTokenMustBeHandled if each input JSON token must be handled
      * @return a reference to this builder
@@ -306,8 +324,7 @@ public final class JsonParserBuilder {
     }
 
     /**
-     * Convenient method to apply the adapter which implements several handler interfaces
-     * in one call.
+     * Convenient method to apply the adapter which implements several handler interfaces in one call.
      *
      * <p>Is equivalent to <pre>{@code
      * if (a instanceof ObjectStartHandler)
@@ -319,23 +336,59 @@ public final class JsonParserBuilder {
      *
      * @param a the adapter - an object, implementing some of concrete handler interfaces
      * @return a reference to this builder
-     * @throws java.lang.IllegalArgumentException if the adapter doesn't implement any
-     *         of concrete handler interfaces
+     * @throws java.lang.IllegalArgumentException if the adapter doesn't implement any of concrete handler
+     *                                            interfaces
      */
     public JsonParserBuilder applyAdapter(JsonHandlerBase a) {
         boolean applied = false;
-        if (a instanceof ObjectStartHandler) { objectStartHandler((ObjectStartHandler) a); applied = true; }
-        if (a instanceof ObjectEndHandler) { objectEndHandler((ObjectEndHandler) a); applied = true; }
-        if (a instanceof ArrayStartHandler) { arrayStartHandler((ArrayStartHandler) a); applied = true; }
-        if (a instanceof ArrayEndHandler) { arrayEndHandler((ArrayEndHandler) a); applied = true; }
-        if (a instanceof BooleanHandler) { booleanHandler((BooleanHandler) a); applied = true; }
-        if (a instanceof NullHandler) { nullHandler((NullHandler) a); applied = true; }
-        if (a instanceof StringValueHandler) { stringValueHandler((StringValueHandler) a); applied = true; }
-        if (a instanceof ObjectKeyHandler) { objectKeyHandler((ObjectKeyHandler) a); applied = true; }
-        if (a instanceof NumberHandler) { numberHandler((NumberHandler) a); applied = true; }
-        if (a instanceof IntegerHandler) { integerHandler((IntegerHandler) a); applied = true; }
-        if (a instanceof FloatingHandler) { floatingHandler((FloatingHandler) a); applied = true; }
-        if (a instanceof ResetHook) { resetHook((ResetHook) a); applied = true; }
+        if (a instanceof ObjectStartHandler) {
+            objectStartHandler((ObjectStartHandler) a);
+            applied = true;
+        }
+        if (a instanceof ObjectEndHandler) {
+            objectEndHandler((ObjectEndHandler) a);
+            applied = true;
+        }
+        if (a instanceof ArrayStartHandler) {
+            arrayStartHandler((ArrayStartHandler) a);
+            applied = true;
+        }
+        if (a instanceof ArrayEndHandler) {
+            arrayEndHandler((ArrayEndHandler) a);
+            applied = true;
+        }
+        if (a instanceof BooleanHandler) {
+            booleanHandler((BooleanHandler) a);
+            applied = true;
+        }
+        if (a instanceof NullHandler) {
+            nullHandler((NullHandler) a);
+            applied = true;
+        }
+        if (a instanceof StringValueHandler) {
+            stringValueHandler((StringValueHandler) a);
+            applied = true;
+        }
+        if (a instanceof ObjectKeyHandler) {
+            objectKeyHandler((ObjectKeyHandler) a);
+            applied = true;
+        }
+        if (a instanceof NumberHandler) {
+            numberHandler((NumberHandler) a);
+            applied = true;
+        }
+        if (a instanceof IntegerHandler) {
+            integerHandler((IntegerHandler) a);
+            applied = true;
+        }
+        if (a instanceof FloatingHandler) {
+            floatingHandler((FloatingHandler) a);
+            applied = true;
+        }
+        if (a instanceof ResetHook) {
+            resetHook((ResetHook) a);
+            applied = true;
+        }
         if (!applied)
             throw new IllegalArgumentException(a + " isn't an instance of any handler interface");
         return this;
@@ -354,8 +407,8 @@ public final class JsonParserBuilder {
     /**
      * Sets the parser's object start handler, or removes it if {@code null} is passed.
      *
-     * @param objectStartHandler a new object start handler. {@code null} means there shouldn't
-     *                           be an object start handler in the built parser.
+     * @param objectStartHandler a new object start handler. {@code null} means there shouldn't be an object
+     *                           start handler in the built parser.
      * @return a reference to this builder
      */
     public JsonParserBuilder objectStartHandler(@Nullable ObjectStartHandler objectStartHandler) {
@@ -376,8 +429,8 @@ public final class JsonParserBuilder {
     /**
      * Sets the parser's object end handler, or removes it if {@code null} is passed.
      *
-     * @param objectEndHandler a new object end handler. {@code null} means there shouldn't
-     *                         be an object end handler in the built parser.
+     * @param objectEndHandler a new object end handler. {@code null} means there shouldn't be an object end
+     *                         handler in the built parser.
      * @return a reference to this builder
      */
     public JsonParserBuilder objectEndHandler(@Nullable ObjectEndHandler objectEndHandler) {
@@ -398,8 +451,8 @@ public final class JsonParserBuilder {
     /**
      * Sets the parser's array start handler, or removes it if {@code null} is passed.
      *
-     * @param arrayStartHandler a new array start handler. {@code null} means there shouldn't
-     *                          be an array start handler in the built parser.
+     * @param arrayStartHandler a new array start handler. {@code null} means there shouldn't be an array
+     *                          start handler in the built parser.
      * @return a reference to this builder
      */
     public JsonParserBuilder arrayStartHandler(@Nullable ArrayStartHandler arrayStartHandler) {
@@ -420,8 +473,8 @@ public final class JsonParserBuilder {
     /**
      * Sets the parser's array end handler, or removes it if {@code null} is passed.
      *
-     * @param arrayEndHandler a new array end handler. {@code null} means there shouldn't
-     *                        be an array end handler in the built parser.
+     * @param arrayEndHandler a new array end handler. {@code null} means there shouldn't be an array end
+     *                        handler in the built parser.
      * @return a reference to this builder
      */
     public JsonParserBuilder arrayEndHandler(@Nullable ArrayEndHandler arrayEndHandler) {
@@ -442,8 +495,8 @@ public final class JsonParserBuilder {
     /**
      * Sets the parser's boolean value handler, or removes it if {@code null} is passed.
      *
-     * @param booleanHandler a new boolean value handler. {@code null} means there shouldn't
-     *                       be a boolean value handler in the built parser.
+     * @param booleanHandler a new boolean value handler. {@code null} means there shouldn't be a boolean
+     *                       value handler in the built parser.
      * @return a reference to this builder
      */
     public JsonParserBuilder booleanHandler(@Nullable BooleanHandler booleanHandler) {
@@ -464,8 +517,8 @@ public final class JsonParserBuilder {
     /**
      * Sets the parser's null value handler, or removes it if {@code null} is passed.
      *
-     * @param nullHandler a new null value handler. {@code null} means there shouldn't
-     *                    be a null value handler in the built parser.
+     * @param nullHandler a new null value handler. {@code null} means there shouldn't be a null value handler
+     *                    in the built parser.
      * @return a reference to this builder
      */
     public JsonParserBuilder nullHandler(@Nullable NullHandler nullHandler) {
@@ -486,8 +539,8 @@ public final class JsonParserBuilder {
     /**
      * Sets the parser's string value handler, or removes it if {@code null} is passed.
      *
-     * @param stringValueHandler a new string value handler. {@code null} means there shouldn't
-     *                           be a string value handler in the built parser.
+     * @param stringValueHandler a new string value handler. {@code null} means there shouldn't be a string
+     *                           value handler in the built parser.
      * @return a reference to this builder
      */
     public JsonParserBuilder stringValueHandler(@Nullable StringValueHandler stringValueHandler) {
@@ -508,8 +561,8 @@ public final class JsonParserBuilder {
     /**
      * Sets the parser's object key handler, or removes it if {@code null} is passed.
      *
-     * @param objectKeyHandler a new object key handler. {@code null} means there shouldn't
-     *                         be an object key handler in the built parser.
+     * @param objectKeyHandler a new object key handler. {@code null} means there shouldn't be an object key
+     *                         handler in the built parser.
      * @return a reference to this builder
      */
     public JsonParserBuilder objectKeyHandler(@Nullable ObjectKeyHandler objectKeyHandler) {
@@ -530,11 +583,11 @@ public final class JsonParserBuilder {
     /**
      * Sets the parser's number value handler, or removes it if {@code null} is passed.
      *
-     * @param numberHandler a new number value handler. {@code null} means there shouldn't
-     *                      be a number value handler in the built parser.
+     * @param numberHandler a new number value handler. {@code null} means there shouldn't be a number value
+     *                      handler in the built parser.
      * @return a reference to this builder
-     * @throws java.lang.IllegalStateException if {@link #integerHandler()} or
-     *         {@link #floatingHandler()} is already set
+     * @throws java.lang.IllegalStateException if {@link #integerHandler()} or {@link #floatingHandler()} is
+     *                                         already set
      */
     public JsonParserBuilder numberHandler(@Nullable NumberHandler numberHandler) {
         checkNoConflict(integerHandler, "integer", numberHandler, "number");
@@ -556,8 +609,8 @@ public final class JsonParserBuilder {
     /**
      * Sets the parser's integer value handler, or removes it if {@code null} is passed.
      *
-     * @param integerHandler a new integer value handler. {@code null} means there shouldn't
-     *                       be a integer value handler in the built parser.
+     * @param integerHandler a new integer value handler. {@code null} means there shouldn't be a integer
+     *                       value handler in the built parser.
      * @return a reference to this builder
      * @throws java.lang.IllegalStateException if {@link #numberHandler()} is already set
      */
@@ -580,8 +633,8 @@ public final class JsonParserBuilder {
     /**
      * Sets the parser's floating value handler, or removes it if {@code null} is passed.
      *
-     * @param floatingHandler a new floating value handler. {@code null} means there shouldn't
-     *                        be a floating value handler in the built parser.
+     * @param floatingHandler a new floating value handler. {@code null} means there shouldn't be a floating
+     *                        value handler in the built parser.
      * @return a reference to this builder
      * @throws java.lang.IllegalStateException if {@link #numberHandler()} is already set
      */
@@ -598,11 +651,9 @@ public final class JsonParserBuilder {
     }
 
     /**
-     * Returns the parser's {@link JsonParser#reset() reset} hook,
-     * or {@code null} if the hook is not set.
+     * Returns the parser's {@link JsonParser#reset() reset} hook, or {@code null} if the hook is not set.
      *
-     * @return the parser's {@link JsonParser#reset() reset} hook,
-     *         or {@code null} if the hook is not set
+     * @return the parser's {@link JsonParser#reset() reset} hook, or {@code null} if the hook is not set
      */
     @Nullable
     public ResetHook resetHook() {
@@ -610,11 +661,10 @@ public final class JsonParserBuilder {
     }
 
     /**
-     * Sets the parser's {@link JsonParser#reset() reset} hook,
-     * or removes it if {@code null} is passed.
+     * Sets the parser's {@link JsonParser#reset() reset} hook, or removes it if {@code null} is passed.
      *
-     * @param resetHook a new {@link JsonParser#reset() reset} hook. {@code null} means there
-     *                  shouldn't be a {@link JsonParser#reset() reset} hook in the built parser.
+     * @param resetHook a new {@link JsonParser#reset() reset} hook. {@code null} means there shouldn't be a
+     *                  {@link JsonParser#reset() reset} hook in the built parser.
      * @return a reference to this builder
      */
     public JsonParserBuilder resetHook(@Nullable ResetHook resetHook) {
