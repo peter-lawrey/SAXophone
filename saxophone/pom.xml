@@ -49,7 +49,6 @@
         </dependencies>
     </dependencyManagement>
 
-
     <dependencies>
 
         <dependency>
@@ -104,6 +103,5 @@
         <developerConnection>scm:git:git@github.com:OpenHFT/SAXophone.git</developerConnection>
         <tag>master</tag>
     </scm>
-
 
 </project>
