@@ -33,7 +33,7 @@
     <artifactId>saxophone</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <name>saxophone</name>
-    <description>Java SAX Parser for JSON</description>
+    <description>Java SAX Parser for JSON and FIX</description>
 
     <scm>
         <url>scm:git:git@github.com:OpenHFT/SAXophone.git</url>

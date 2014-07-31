@@ -20,8 +20,6 @@ import net.openhft.lang.model.constraints.NotNull;
 import net.openhft.lang.model.constraints.Nullable;
 import net.openhft.saxophone.json.handler.*;
 
-import java.util.*;
-
 import static net.openhft.saxophone.json.JsonParserTopLevelStrategy.ALLOW_JUST_A_SINGLE_OBJECT;
 
 /**
