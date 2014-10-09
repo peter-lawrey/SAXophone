@@ -27,7 +27,7 @@ public interface BytesSaxParser {
     /**
      * Parse as much of the Bytes as possible, between the
      *
-     * @param bytes
+     * @param bytes The bytes
      */
     void parse(Bytes bytes);
 }

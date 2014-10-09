@@ -31,13 +31,13 @@ package net.openhft.saxophone.json.handler;
  *         return map;
  *     }
  *
- *     @Override
+ *     &#64;Override
  *     public boolean onObjectKey(CharSequence key) {
  *         key = key.toString();
  *         return true;
  *     }
  *
- *     @Override
+ *     &#64;Override
  *     public boolean onStringValue(CharSequence value) throws Exception {
  *         if (key == null)
  *             throw new Exception("Only objects are expected");
@@ -46,9 +46,9 @@ package net.openhft.saxophone.json.handler;
  *         return true;
  *     }
  *
- *     @Override
+ *     &#64;Override
  *     public void onReset() {
- *         map = new HashMap<String, String>();
+ *         map = new HashMap&lt;String, String&gt;();
  *     }
  * }
  * }</pre>
@@ -58,7 +58,7 @@ public interface ResetHook extends JsonHandlerBase {
      * Performs an action on {@link net.openhft.saxophone.json.JsonParser#reset()} call.
      *
      * <p>Unchecked exceptions, that might be thrown in this method, are relayed to
-     * the {@link net.openhft.saxophone.json.JsonParser#reset()} caller.
+     * the {@link net.openhft.saxophone.json.JsonParser#reset()} caller. </p>
      */
     void onReset();
 }

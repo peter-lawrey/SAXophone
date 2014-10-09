@@ -30,7 +30,7 @@ import static net.openhft.saxophone.json.JsonParserTopLevelStrategy.ALLOW_JUST_A
 /**
  * A builder of {@link JsonParser}. To obtain a new builder, call {@link JsonParser#builder()} static method.
  *
- * <p>Example usage: <pre>{@code
+ * Example usage: <pre>{@code
  * public final class PrettyPrinter
  *         implements ResetHook,
  *         ObjectStartHandler, ObjectEndHandler,
@@ -53,12 +53,12 @@ import static net.openhft.saxophone.json.JsonParserTopLevelStrategy.ALLOW_JUST_A
  *     private int indentStep = 4;
  *     private StringBuilder sb = new StringBuilder();
  *
- *     @Override
+ *     &#64;Override
  *     public String toString() {
  *         return sb.toString();
  *     }
  *
- *     @Override
+ *     &#64;Override
  *     public void onReset() {
  *         indent = 0;
  *         sb.setLength(0);
@@ -99,12 +99,12 @@ import static net.openhft.saxophone.json.JsonParserTopLevelStrategy.ALLOW_JUST_A
  *         return true;
  *     }
  *
- *     @Override
+ *     &#64;Override
  *     public boolean onObjectStart() {
  *         return start('&#x7b;');
  *     }
  *
- *     @Override
+ *     &#64;Override
  *     public boolean onArrayStart() {
  *         return start('[');
  *     }
@@ -117,17 +117,17 @@ import static net.openhft.saxophone.json.JsonParserTopLevelStrategy.ALLOW_JUST_A
  *         return true;
  *     }
  *
- *     @Override
+ *     &#64;Override
  *     public boolean onArrayEnd() {
  *         return end('[', ']');
  *     }
  *
- *     @Override
+ *     &#64;Override
  *     public boolean onObjectEnd() {
  *         return end('{', '}');
  *     }
  *
- *     @Override
+ *     &#64;Override
  *     public boolean onObjectKey(CharSequence key) {
  *         if (last() != '&#x7b;')
  *             sb.append(',');
@@ -144,22 +144,22 @@ import static net.openhft.saxophone.json.JsonParserTopLevelStrategy.ALLOW_JUST_A
  *         return true;
  *     }
  *
- *     @Override
+ *     &#64;Override
  *     public boolean onBoolean(boolean value) {
  *         return onValue(value ? "true" : "false", false);
  *     }
  *
- *     @Override
+ *     &#64;Override
  *     public boolean onNull() {
  *         return onValue("null", false);
  *     }
  *
- *     @Override
+ *     &#64;Override
  *     public boolean onNumber(CharSequence number) {
  *         return onValue(number, false);
  *     }
  *
- *     @Override
+ *     &#64;Override
  *     public boolean onStringValue(CharSequence value) {
  *         return onValue(value, true);
  *     }
