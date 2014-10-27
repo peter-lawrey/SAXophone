@@ -27,6 +27,7 @@ public final class PrettyPrinter
         ObjectKeyHandler, StringValueHandler,
         NumberHandler, BooleanHandler, NullHandler {
 
+    public static final String LINE_SEPARATOR = System.getProperty("line.separator");
     private int indent = 0;
     private int indentStep = 4;
     private StringBuilder sb = new StringBuilder();
@@ -50,7 +51,7 @@ public final class PrettyPrinter
     }
 
     private PrettyPrinter newLine() {
-        sb.append(System.lineSeparator());
+        sb.append(LINE_SEPARATOR);
         return this;
     }
 
