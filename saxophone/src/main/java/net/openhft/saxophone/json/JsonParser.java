@@ -31,7 +31,8 @@ import static net.openhft.saxophone.json.JsonParserOption.*;
 import static net.openhft.saxophone.json.JsonParserTopLevelStrategy.ALLOW_MULTIPLE_VALUES;
 import static net.openhft.saxophone.json.JsonParserTopLevelStrategy.ALLOW_TRAILING_GARBAGE;
 import static net.openhft.saxophone.json.ParserState.*;
-import static net.openhft.saxophone.json.TokenType.*;
+import static net.openhft.saxophone.json.TokenType.EOF;
+import static net.openhft.saxophone.json.TokenType.STRING;
 
 /**
  * A pull JSON parser, accepts chunks of JSON as {@link net.openhft.lang.io.Bytes}.
@@ -226,7 +227,6 @@ public final class JsonParser {
     private final OnEscapedKey onEscapedKey = new OnEscapedKey();
     private final OnNumber onNumber = new OnNumber();
     private final OnFloating onFloating = new OnFloating();
-
 
     JsonParser(EnumSet<JsonParserOption> flags,
                JsonParserTopLevelStrategy topLevelStrategy,

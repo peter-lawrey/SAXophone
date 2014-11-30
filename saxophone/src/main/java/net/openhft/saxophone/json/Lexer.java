@@ -608,7 +608,6 @@ final class Lexer {
             outLen -= 2;
         }
 
-
         if (LOG.isDebugEnabled()) {
             if (tok == ERROR) {
                 LOG.debug("lexical error: " + error);

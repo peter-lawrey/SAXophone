@@ -279,7 +279,6 @@ public final class JsonParserBuilder {
         return this;
     }
 
-
     /**
      * Returns the parser's top-level strategy.
      *
