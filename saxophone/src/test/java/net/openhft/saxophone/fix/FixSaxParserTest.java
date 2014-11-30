@@ -67,7 +67,6 @@ public class FixSaxParserTest {
     }
 
     static void processFixMessage(StringBuilder sender, StringBuilder target, StringBuilder clOrdId, StringBuilder symbol, double quantity, double price, int ordType) {
-
     }
 
     static class MyFixHandler implements FixHandler {
@@ -130,6 +129,5 @@ public class FixSaxParserTest {
             clOrdId.setLength(0);
             symbol.setLength(0);
         }
-
     }
 }
