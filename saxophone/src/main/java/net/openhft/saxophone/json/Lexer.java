@@ -454,7 +454,6 @@ final class Lexer {
 
         lexing:
         for (;;) {
-
             if (jsonText.remaining() == 0) {
                 tok = EOF;
                 break;
