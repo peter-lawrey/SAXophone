@@ -51,23 +51,33 @@ final class Unescaper {
                 buf.append(str, beg, (int) (end - pos));
                 switch (str.readUnsignedByte(++end)) {
                     case 'r': codePoint = '\r'; break;
+
                     case 'n': codePoint = '\n'; break;
+
                     case '\\': codePoint = '\\'; break;
+
                     case '/': codePoint = '/'; break;
+
                     case '"': codePoint = '\"'; break;
+
                     case 'f': codePoint = '\f'; break;
+
                     case 'b': codePoint = '\b'; break;
+
                     case 't': codePoint = '\t'; break;
+
                     case 'u': {
                         codePoint = hexToDigit(str, ++end);
                         end += 3;
                         break;
                     }
+
                     default:
                         throw new AssertionError("this should never happen");
                 }
                 buf.append(codePoint);
                 beg = (int) ((++end) - pos);
+
             } else {
                 end++;
             }

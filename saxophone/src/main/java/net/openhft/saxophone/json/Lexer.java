@@ -146,6 +146,7 @@ final class Lexer {
     private int readChar(Bytes txt) {
         if (bufInUse && buf.remaining() > 0) {
             return buf.readUnsignedByte();
+
         } else {
             return txt.readUnsignedByte();
         }
@@ -155,6 +156,7 @@ final class Lexer {
         long pos = txt.position();
         if (pos > 0) {
             txt.position(pos - 1);
+
         } else {
             buf.position(buf.position() - 1);
         }
@@ -174,11 +176,13 @@ final class Lexer {
         if (curChar <= 0x7f) {
             /* single byte */
             return STRING;
+
         } else if ((curChar >> 5) == 0x6) {
             /* two byte */
             if (jsonText.remaining() == 0) return EOF;
             curChar = readChar(jsonText);
             if ((curChar >> 6) == 0x2) return STRING;
+
         } else if ((curChar >> 4) == 0x0e) {
             /* three byte */
             if (jsonText.remaining() == 0) return EOF;
@@ -243,6 +247,7 @@ final class Lexer {
             {
                 if (bufInUse && buf.remaining() > 0) {
                     stringScan(buf);
+
                 } else if (jsonText.remaining() > 0) {
                     stringScan(jsonText);
                 }
@@ -306,6 +311,7 @@ final class Lexer {
                 if (t == EOF) {
                     tok = EOF;
                     break;
+
                 } else if (t == ERROR) {
                     error = STRING_INVALID_UTF8;
                     break;
@@ -343,11 +349,13 @@ final class Lexer {
         if (c == '0') {
             if (jsonText.remaining() == 0) return EOF;
             c = readChar(jsonText);
+
         } else if (c >= '1' && c <= '9') {
             do {
                 if (jsonText.remaining() == 0) return EOF;
                 c = readChar(jsonText);
             } while (c >= '0' && c <= '9');
+
         } else {
             unreadChar(jsonText);
             error = MISSING_INTEGER_AFTER_MINUS;
@@ -391,6 +399,7 @@ final class Lexer {
                     if (jsonText.remaining() == 0) return EOF;
                     c = readChar(jsonText);
                 } while (c >= '0' && c <= '9');
+
             } else {
                 unreadChar(jsonText);
                 error = MISSING_INTEGER_AFTER_EXPONENT;
@@ -420,6 +429,7 @@ final class Lexer {
                 if (jsonText.remaining() == 0) return EOF;
                 c = readChar(jsonText);
             } while (c != '\n');
+
         } else if (c == '*') {
             /* now we throw away until end of comment */
             for (;;) {
@@ -430,6 +440,7 @@ final class Lexer {
                     c = readChar(jsonText);
                     if (c == '/') {
                         break;
+
                     } else {
                         unreadChar(jsonText);
                     }
@@ -483,6 +494,7 @@ final class Lexer {
                 case '\t': case '\n': case '\u000B': case '\f': case '\r': case ' ':
                     startOffset++;
                     break;
+
                 case 't': {
                     for (char want : RUE_CHARS) {
                         if (jsonText.remaining() == 0) {
@@ -500,6 +512,7 @@ final class Lexer {
                     tok = BOOL;
                     break lexing;
                 }
+
                 case 'f': {
                     for (char want : ALSE_CHARS) {
                         if (jsonText.remaining() == 0) {
@@ -517,6 +530,7 @@ final class Lexer {
                     tok = BOOL;
                     break lexing;
                 }
+
                 case 'n': {
                     for (char want : ULL_CHARS) {
                         if (jsonText.remaining() == 0) {
@@ -534,10 +548,12 @@ final class Lexer {
                     tok = NULL;
                     break lexing;
                 }
+
                 case '"': {
                     tok = lexString(jsonText);
                     break lexing;
                 }
+
                 case '-':
                 case '0': case '1': case '2': case '3': case '4':
                 case '5': case '6': case '7': case '8': case '9': {
@@ -546,6 +562,7 @@ final class Lexer {
                     tok = lexNumber(jsonText);
                     break lexing;
                 }
+
                 case '/':
                     /* hey, look, a probable comment!  If comments are disabled
                      * it's an error. */
@@ -610,8 +627,10 @@ final class Lexer {
         if (LOG.isDebugEnabled()) {
             if (tok == ERROR) {
                 LOG.debug("lexical error: " + error);
+
             } else if (tok == EOF) {
                 LOG.debug("EOF hit");
+
             } else {
                 LOG.debug("lexed %s: '" + tok + outBuf.bytes(outPos, outLen) + "'");
             }

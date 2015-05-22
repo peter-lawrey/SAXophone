@@ -89,30 +89,39 @@ public class FixSaxParserTest {
                 case 8: // reset
                     resetAll();
                     break;
+
                 case 35:
                     assert value.readByte() == 'D';
                     break;
+
                 case 49:
                     value.parseUTF(sender, StopCharTesters.ALL);
                     break;
+
                 case 56:
                     value.parseUTF(target, StopCharTesters.ALL);
                     break;
+
                 case 11:
                     value.parseUTF(clOrdId, StopCharTesters.ALL);
                     break;
+
                 case 55:
                     value.parseUTF(symbol, StopCharTesters.ALL);
                     break;
+
                 case 38:
                     quantity = value.parseLong();
                     break;
+
                 case 44:
                     price = value.parseDouble();
                     break;
+
                 case 40:
                     ordType = (int) value.parseLong();
                     break;
+
                 case 10:
                     processFixMessage(sender, target, clOrdId, symbol, quantity, price, ordType);
                     break;

@@ -64,6 +64,7 @@ public final class PrettyPrinter
             return;
         if (last() == ':') {
             sb.append(' ');
+
         } else {
             if (last() != '[')
                 sb.append(',');

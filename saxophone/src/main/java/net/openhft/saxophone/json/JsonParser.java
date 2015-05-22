@@ -294,9 +294,11 @@ public final class JsonParser {
             cutLim += 1;
             off++;
             ret = s.readByte(off) - '0';
+
         } else if (ret == 0) {
             assert len == 1;
             return 0;
+
         } else {
             assert ret > 0 && ret <= 9;
         }
@@ -462,6 +464,7 @@ public final class JsonParser {
                                 checkTokenCouldBePassed(tok);
                             }
                             break;
+
                         case STRING_WITH_ESCAPES:
                             if (stringValueHandler != null) {
                                 try {
@@ -476,6 +479,7 @@ public final class JsonParser {
                                 checkTokenCouldBePassed(STRING);
                             }
                             break;
+
                         case BOOL:
                             if (booleanHandler != null) {
                                 boolean value = lexer.outBuf.readUnsignedByte(lexer.outPos) == 't';
@@ -491,6 +495,7 @@ public final class JsonParser {
                                 checkTokenCouldBePassed(tok);
                             }
                             break;
+
                         case NULL:
                             if (nullHandler != null) {
                                 try {
@@ -505,6 +510,7 @@ public final class JsonParser {
                                 checkTokenCouldBePassed(tok);
                             }
                             break;
+
                         case LEFT_BRACKET:
                             if (objectStartHandler != null) {
                                 try {
@@ -520,6 +526,7 @@ public final class JsonParser {
                             }
                             stateToPush = MAP_START;
                             break;
+
                         case LEFT_BRACE:
                             if (arrayStartHandler != null) {
                                 try {
@@ -535,6 +542,7 @@ public final class JsonParser {
                             }
                             stateToPush = ARRAY_START;
                             break;
+
                         case INTEGER:
                             if (numberHandler != null) {
                                 try {
@@ -562,6 +570,7 @@ public final class JsonParser {
                                 checkTokenCouldBePassed(tok);
                             }
                             break;
+
                         case DOUBLE:
                             if (numberHandler != null) {
                                 try {
@@ -588,6 +597,7 @@ public final class JsonParser {
                                 checkTokenCouldBePassed(tok);
                             }
                             break;
+
                         case RIGHT_BRACE: {
                             if (stateStack.current() == ARRAY_START) {
                                 if (arrayEndHandler != null) {
@@ -607,6 +617,7 @@ public final class JsonParser {
                             }
                             /* intentional fall-through */
                         }
+
                         case COLON:
                         case COMMA:
                         case RIGHT_BRACKET:
@@ -619,8 +630,10 @@ public final class JsonParser {
                         byte s = stateStack.current();
                         if (s == START || s == GOT_VALUE) {
                             stateStack.set(PARSE_COMPLETE);
+
                         } else if (s == MAP_NEED_VAL) {
                             stateStack.set(MAP_GOT_VAL);
+
                         } else {
                             stateStack.set(ARRAY_GOT_VAL);
                         }
@@ -631,6 +644,7 @@ public final class JsonParser {
 
                     continue around_again;
                 }
+
                 case MAP_START:
                 case MAP_NEED_KEY: {
                     /* only difference between these two states is that in
@@ -683,6 +697,7 @@ public final class JsonParser {
                             return parseError("invalid object key (must be a string)");
                     }
                 }
+
                 case MAP_SEP: {
                     tok = lexer.lex(jsonText);
                     switch (tok) {
@@ -698,6 +713,7 @@ public final class JsonParser {
                                     "object key and value must be separated by a colon (':')");
                     }
                 }
+
                 case MAP_GOT_VAL: {
                     tok = lexer.lex(jsonText);
                     switch (tok) {
@@ -729,6 +745,7 @@ public final class JsonParser {
                                     "after key and value, inside map, I expect ',' or '}'");
                     }
                 }
+
                 case ARRAY_GOT_VAL: {
                     tok = lexer.lex(jsonText);
                     switch (tok) {
@@ -799,6 +816,7 @@ public final class JsonParser {
         long pos = jsonText.position();
         if (pos - startOffset >= lexer.outLen) {
             jsonText.position(pos - lexer.outLen);
+
         } else {
             jsonText.position(startOffset);
         }
