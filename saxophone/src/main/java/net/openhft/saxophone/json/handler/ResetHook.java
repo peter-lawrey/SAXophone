@@ -40,9 +40,9 @@ package net.openhft.saxophone.json.handler;
  *     }
  *
  *     &#64;Override
- *     public boolean onStringValue(CharSequence value) throws Exception {
+ *     public boolean onStringValue(CharSequence value) throws InvalidArgumentException {
  *         if (key == null)
- *             throw new Exception("Only objects are expected");
+ *             throw new InvalidArgumentException("Only objects are expected");
  *         map.put(key, value.toString());
  *         key = null;
  *         return true;
