@@ -32,7 +32,7 @@ public interface BooleanHandler extends JsonHandlerBase {
      * @param value the boolean value
      * @return {@code true} if the parsing should be continued, {@code false} if it should be
      *         stopped immediately
-     * @throws Exception if an error occurred during handling
+     * @  if an error occurred during handling
      */
-    boolean onBoolean(boolean value) throws Exception;
+    boolean onBoolean(boolean value)  ;
 }

@@ -143,7 +143,7 @@ public final class JsonParser {
     @Nullable private final ResetHook resetHook;
 
     private class OnString {
-        boolean on() throws Exception {
+        boolean on()   {
             Bytes buf = lexer.outBuf;
             long bufPos = lexer.outPos;
             long bufLen = lexer.outLen;
@@ -170,7 +170,7 @@ public final class JsonParser {
             return buf;
         }
 
-        boolean apply(CharSequence value) throws Exception {
+        boolean apply(CharSequence value)   {
             assert stringValueHandler != null;
             return stringValueHandler.onStringValue(value);
         }
@@ -185,28 +185,28 @@ public final class JsonParser {
         }
     }
 
-    private boolean applyKey(CharSequence key) throws Exception {
+    private boolean applyKey(CharSequence key)   {
         assert objectKeyHandler != null;
         return objectKeyHandler.onObjectKey(key);
     }
 
     private class OnKey extends OnString {
         @Override
-        boolean apply(CharSequence key) throws Exception {
+        boolean apply(CharSequence key)   {
             return applyKey(key);
         }
     }
 
     private class OnEscapedKey extends OnEscapedString {
         @Override
-        boolean apply(CharSequence key) throws Exception {
+        boolean apply(CharSequence key)   {
             return applyKey(key);
         }
     }
 
     private class OnNumber extends OnString {
         @Override
-        boolean apply(CharSequence number) throws Exception {
+        boolean apply(CharSequence number)   {
             assert numberHandler != null;
             return numberHandler.onNumber(number);
         }
@@ -214,7 +214,7 @@ public final class JsonParser {
 
     private class OnFloating extends OnString {
         @Override
-        boolean apply(CharSequence number) throws Exception {
+        boolean apply(CharSequence number)   {
             assert floatingHandler != null;
             // TODO optimize, get rid of toString() conversion
             return floatingHandler.onFloating(Double.parseDouble(number.toString()));

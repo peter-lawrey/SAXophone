@@ -39,7 +39,7 @@ public interface FloatingHandler extends JsonHandlerBase {
      *              or the nearest value representable as {@code double}
      * @return {@code true} if the parsing should be continued, {@code false} if it should be
      *         stopped immediately
-     * @throws Exception if an error occurred during handling
+     * @  if an error occurred during handling
      */
-    boolean onFloating(double value) throws Exception;
+    boolean onFloating(double value)  ;
 }
