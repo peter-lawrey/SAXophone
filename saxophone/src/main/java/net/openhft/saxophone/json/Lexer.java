@@ -18,7 +18,7 @@
 
 package net.openhft.saxophone.json;
 
-import net.openhft.lang.io.Bytes;
+import net.openhft.chronicle.bytes.Bytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -115,7 +115,7 @@ final class Lexer {
     LexError error;
 
     /** a input buffer to handle the case where a token is spread over multiple chunks */
-    private final Buf buf = new Buf();
+    private final Bytes buf = Bytes.elasticByteBuffer();
 
     /** are we using the lex buf? */
     private boolean bufInUse;
@@ -137,14 +137,13 @@ final class Lexer {
 
     void reset() {
         bufInUse = false;
-        buf.reset();
         error = null;
         outBuf = null;
         outPos = outLen = 0;
     }
 
     private int readChar(Bytes txt) {
-        if (bufInUse && buf.remaining() > 0) {
+        if (bufInUse && buf.readRemaining() > 0) {
             return buf.readUnsignedByte();
 
         } else {
@@ -153,13 +152,7 @@ final class Lexer {
     }
 
     private void unreadChar(Bytes txt) {
-        long pos = txt.position();
-        if (pos > 0) {
-            txt.position(pos - 1);
-
-        } else {
-            buf.position(buf.position() - 1);
-        }
+        txt.readSkip(-1);
     }
 
     /** process a variable length utf8 encoded codepoint.
@@ -179,28 +172,28 @@ final class Lexer {
 
         } else if ((curChar >> 5) == 0x6) {
             /* two byte */
-            if (jsonText.remaining() == 0) return EOF;
+            if (jsonText.readRemaining() == 0) return EOF;
             curChar = readChar(jsonText);
             if ((curChar >> 6) == 0x2) return STRING;
 
         } else if ((curChar >> 4) == 0x0e) {
             /* three byte */
-            if (jsonText.remaining() == 0) return EOF;
+            if (jsonText.readRemaining() == 0) return EOF;
             curChar = readChar(jsonText);
             if ((curChar >> 6) == 0x2) {
-                if (jsonText.remaining() == 0) return EOF;
+                if (jsonText.readRemaining() == 0) return EOF;
                 curChar = readChar(jsonText);
                 if ((curChar >> 6) == 0x2) return STRING;
             }
         } else if ((curChar >> 3) == 0x1e) {
             /* four byte */
-            if (jsonText.remaining() == 0) return EOF;
+            if (jsonText.readRemaining() == 0) return EOF;
             curChar = readChar(jsonText);
             if ((curChar >> 6) == 0x2) {
-                if (jsonText.remaining() == 0) return EOF;
+                if (jsonText.readRemaining() == 0) return EOF;
                 curChar = readChar(jsonText);
                 if ((curChar >> 6) == 0x2) {
-                    if (jsonText.remaining() == 0) return EOF;
+                    if (jsonText.readRemaining() == 0) return EOF;
                     curChar = readChar(jsonText);
                     if ((curChar >> 6) == 0x2) return STRING;
                 }
@@ -217,12 +210,12 @@ final class Lexer {
      */
     private void stringScan(Bytes bytes) {
         int mask = IJC | NFP | (validateUTF8 ? NUC : 0);
-        long pos = bytes.position();
-        long limit = bytes.limit();
+        long pos = bytes.readPosition();
+        long limit = bytes.readLimit();
         while (pos < limit && ((CHAR_LOOKUP_TABLE[bytes.readUnsignedByte(pos)] & mask) == 0)) {
             pos++;
         }
-        bytes.position(pos);
+        bytes.readPosition(pos);
     }
 
     /**
@@ -245,15 +238,15 @@ final class Lexer {
             /* now jump into a faster scanning routine to skip as much
              * of the buffers as possible */
             {
-                if (bufInUse && buf.remaining() > 0) {
+                if (bufInUse && buf.readRemaining() > 0) {
                     stringScan(buf);
 
-                } else if (jsonText.remaining() > 0) {
+                } else if (jsonText.readRemaining() > 0) {
                     stringScan(jsonText);
                 }
             }
 
-            if (jsonText.remaining() == 0) {
+            if (jsonText.readRemaining() == 0) {
                 tok = EOF;
                 break;
             }
@@ -268,7 +261,7 @@ final class Lexer {
             /* backslash escapes a set of control chars, */
             else if (curChar == '\\') {
                 hasEscapes = true;
-                if (jsonText.remaining() == 0) {
+                if (jsonText.readRemaining() == 0) {
                     tok = EOF;
                     break;
                 }
@@ -277,7 +270,7 @@ final class Lexer {
                 curChar = readChar(jsonText);
                 if (curChar == 'u') {
                     for (int i = 0; i < 4; i++) {
-                        if (jsonText.remaining() == 0) {
+                        if (jsonText.readRemaining() == 0) {
                             tok = EOF;
                             break finish_string_lex;
                         }
@@ -336,23 +329,23 @@ final class Lexer {
 
         TokenType tok = INTEGER;
 
-        if (jsonText.remaining() == 0) return EOF;
+        if (jsonText.readRemaining() == 0) return EOF;
         c = readChar(jsonText);
 
         /* optional leading minus */
         if (c == '-') {
-            if (jsonText.remaining() == 0) return EOF;
+            if (jsonText.readRemaining() == 0) return EOF;
             c = readChar(jsonText);
         }
 
         /* a single zero, or a series of integers */
         if (c == '0') {
-            if (jsonText.remaining() == 0) return EOF;
+            if (jsonText.readRemaining() == 0) return EOF;
             c = readChar(jsonText);
 
         } else if (c >= '1' && c <= '9') {
             do {
-                if (jsonText.remaining() == 0) return EOF;
+                if (jsonText.readRemaining() == 0) return EOF;
                 c = readChar(jsonText);
             } while (c >= '0' && c <= '9');
 
@@ -366,12 +359,12 @@ final class Lexer {
         if (c == '.') {
             boolean readSome = false;
 
-            if (jsonText.remaining() == 0) return EOF;
+            if (jsonText.readRemaining() == 0) return EOF;
             c = readChar(jsonText);
 
             while (c >= '0' && c <= '9') {
                 readSome = true;
-                if (jsonText.remaining() == 0) return EOF;
+                if (jsonText.readRemaining() == 0) return EOF;
                 c = readChar(jsonText);
             }
 
@@ -385,18 +378,18 @@ final class Lexer {
 
         /* optional exponent (indicates this is floating point) */
         if (c == 'e' || c == 'E') {
-            if (jsonText.remaining() == 0) return EOF;
+            if (jsonText.readRemaining() == 0) return EOF;
             c = readChar(jsonText);
 
             /* optional sign */
             if (c == '+' || c == '-') {
-                if (jsonText.remaining() == 0) return EOF;
+                if (jsonText.readRemaining() == 0) return EOF;
                 c = readChar(jsonText);
             }
 
             if (c >= '0' && c <= '9') {
                 do {
-                    if (jsonText.remaining() == 0) return EOF;
+                    if (jsonText.readRemaining() == 0) return EOF;
                     c = readChar(jsonText);
                 } while (c >= '0' && c <= '9');
 
@@ -419,24 +412,24 @@ final class Lexer {
 
         TokenType tok = COMMENT;
 
-        if (jsonText.remaining() == 0) return EOF;
+        if (jsonText.readRemaining() == 0) return EOF;
         c = readChar(jsonText);
 
         /* either slash or star expected */
         if (c == '/') {
             /* now we throw away until end of line */
             do {
-                if (jsonText.remaining() == 0) return EOF;
+                if (jsonText.readRemaining() == 0) return EOF;
                 c = readChar(jsonText);
             } while (c != '\n');
 
         } else if (c == '*') {
             /* now we throw away until end of comment */
             for (;;) {
-                if (jsonText.remaining() == 0) return EOF;
+                if (jsonText.readRemaining() == 0) return EOF;
                 c = readChar(jsonText);
                 if (c == '*') {
-                    if (jsonText.remaining() == 0) return EOF;
+                    if (jsonText.readRemaining() == 0) return EOF;
                     c = readChar(jsonText);
                     if (c == '/') {
                         break;
@@ -457,7 +450,7 @@ final class Lexer {
     TokenType lex(Bytes jsonText) {
         TokenType tok;
         int c;
-        long startOffset = jsonText.position();
+        long startOffset = jsonText.readPosition();
 
         outBuf = null;
         outPos = 0;
@@ -465,7 +458,7 @@ final class Lexer {
 
         lexing:
         for (;;) {
-            if (jsonText.remaining() == 0) {
+            if (jsonText.readRemaining() == 0) {
                 tok = EOF;
                 break;
             }
@@ -497,7 +490,7 @@ final class Lexer {
 
                 case 't': {
                     for (char want : RUE_CHARS) {
-                        if (jsonText.remaining() == 0) {
+                        if (jsonText.readRemaining() == 0) {
                             tok = EOF;
                             break lexing;
                         }
@@ -515,7 +508,7 @@ final class Lexer {
 
                 case 'f': {
                     for (char want : ALSE_CHARS) {
-                        if (jsonText.remaining() == 0) {
+                        if (jsonText.readRemaining() == 0) {
                             tok = EOF;
                             break lexing;
                         }
@@ -533,7 +526,7 @@ final class Lexer {
 
                 case 'n': {
                     for (char want : ULL_CHARS) {
-                        if (jsonText.remaining() == 0) {
+                        if (jsonText.readRemaining() == 0) {
                             tok = EOF;
                             break lexing;
                         }
@@ -580,9 +573,9 @@ final class Lexer {
                      * - eof hit. (tok_eof) */
                     tok = lexComment(jsonText);
                     if (tok == COMMENT) {
-                        buf.reset();
+                        buf.clear();
                         bufInUse = false;
-                        startOffset = jsonText.position();
+                        startOffset = jsonText.readPosition();
                         continue lexing;
                     }
                     /* hit error or eof, bail */
@@ -599,22 +592,34 @@ final class Lexer {
          * if it's an EOF token */
         if (tok == EOF || bufInUse) {
             if (!bufInUse) {
-                buf.reset();
+                buf.readPosition(0);
+                buf.readLimit(0);
+                buf.writePosition(0);
                 bufInUse = true;
             }
-            buf.append(jsonText, startOffset, jsonText.position() - startOffset);
-            buf.position(0);
+            //System.out.println("1 buf  " + buf.toDebugString());
+            //System.out.println("json " + jsonText.toDebugString());
+            //System.out.println("startOffset " + startOffset);
+            //System.out.println("jsonText.writePosition() " + jsonText.writePosition());
+            long readPos = jsonText.readPosition();
+            jsonText.readPosition(startOffset);
+            buf.write(jsonText, startOffset, jsonText.writePosition() - startOffset);
+            jsonText.readPosition(readPos);
+            buf.readPosition(0);
+            //buf.readLimit(jsonText.writePosition());
+            //System.out.println("2 buf  " + buf.toDebugString());
+            //buf.readLimit(jsonText.readPosition() - startOffset);
 
             if (tok != EOF) {
                 outBuf = buf;
                 outPos = 0;
-                outLen = buf.limit();
+                outLen = buf.readLimit();
                 bufInUse = false;
             }
         } else if (tok != ERROR) {
             outBuf = jsonText;
             outPos = startOffset;
-            outLen = jsonText.position() - startOffset;
+            outLen = jsonText.readPosition() - startOffset;
         }
 
         /* special case for strings. skip the quotes. */
@@ -632,7 +637,7 @@ final class Lexer {
                 LOG.debug("EOF hit");
 
             } else {
-                LOG.debug("lexed %s: '" + tok + outBuf.bytes(outPos, outLen) + "'");
+                LOG.debug("lexed %s: '" + tok + outBuf.toDebugString() + "'");
             }
         }
 

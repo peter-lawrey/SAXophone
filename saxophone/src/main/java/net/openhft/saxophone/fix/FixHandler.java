@@ -18,7 +18,8 @@
 
 package net.openhft.saxophone.fix;
 
-import net.openhft.lang.io.Bytes;
+
+import net.openhft.chronicle.bytes.Bytes;
 
 public interface FixHandler {
     /**

@@ -18,7 +18,8 @@
 
 package net.openhft.saxophone.json;
 
-import net.openhft.lang.io.Bytes;
+
+import net.openhft.chronicle.bytes.Bytes;
 
 /**
  * Porting note: this class approximately corresponds to src/yajl_encode.c and src/yajl_encode.h
@@ -41,8 +42,8 @@ final class Unescaper {
     }
 
     static void decode(StringBuilder buf, Bytes str) {
-        long len = str.limit();
-        long pos = str.position();
+        long len = str.readLimit();
+        long pos = str.readPosition();
         int beg = 0;
         long end = pos;
         char codePoint;

@@ -18,11 +18,11 @@
 
 package net.openhft.saxophone.json;
 
-import net.openhft.lang.io.ByteBufferBytes;
-import net.openhft.lang.io.Bytes;
-import net.openhft.lang.model.constraints.Nullable;
+import net.openhft.chronicle.bytes.Bytes;
+import net.openhft.chronicle.bytes.NativeBytesStore;
 import net.openhft.saxophone.ParseException;
 import net.openhft.saxophone.json.handler.*;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.ByteBuffer;
 import java.util.EnumSet;
@@ -35,7 +35,7 @@ import static net.openhft.saxophone.json.TokenType.EOF;
 import static net.openhft.saxophone.json.TokenType.STRING;
 
 /**
- * A pull JSON parser, accepts chunks of JSON as {@link net.openhft.lang.io.Bytes}.
+ * A pull JSON parser, accepts chunks of JSON as {@link Bytes}.
  *
  * <p>Construction: <pre>{@code
  * Parser.builder().applyAdapter(eventHandler).options(...).build();
@@ -129,7 +129,8 @@ public final class JsonParser {
     private final boolean eachTokenMustBeHandled;
     private Bytes finishSpace;
 
-    @Nullable private final ObjectStartHandler objectStartHandler;
+    @Nullable
+    private final ObjectStartHandler objectStartHandler;
     @Nullable private final ObjectEndHandler objectEndHandler;
     @Nullable private final ArrayStartHandler arrayStartHandler;
     @Nullable private final ArrayEndHandler arrayEndHandler;
@@ -147,21 +148,21 @@ public final class JsonParser {
             Bytes buf = lexer.outBuf;
             long bufPos = lexer.outPos;
             long bufLen = lexer.outLen;
-            boolean borrowBuf = buf.position() != bufPos ||
-                    buf.remaining() != bufLen;
+            boolean borrowBuf = buf.readPosition() != bufPos ||
+                    buf.readRemaining() != bufLen;
             long pos = 0, lim = 0;
             if (borrowBuf) {
-                pos = buf.position();
-                lim = buf.limit();
-                buf.clear();
-                buf.position(bufPos);
-                buf.limit(bufPos + bufLen);
+                pos = buf.readPosition();
+                lim = buf.readLimit();
+                //buf.clear();
+                buf.readLimit(bufPos + bufLen);
+                buf.readPosition(bufPos);
             }
             boolean go = apply(value(buf));
             if (borrowBuf) {
-                buf.clear();
-                buf.position(pos);
-                buf.limit(lim);
+                //buf.clear();
+                buf.readLimit(lim);
+                buf.readPosition(pos);
             }
             return go;
         }
@@ -319,7 +320,7 @@ public final class JsonParser {
     /**
      * Processes the last token.
      *
-     * <p>If the JSON data portions given to {@link #parse(net.openhft.lang.io.Bytes)} method
+     * <p>If the JSON data portions given to {@link #parse(Bytes)} method
      * by now since the previous {@link #reset()} call, or call of this method,
      * or parser construction don't comprise one or several complete JSON entities, and
      * {@link net.openhft.saxophone.json.JsonParserOption#ALLOW_PARTIAL_VALUES} is not set,
@@ -335,7 +336,7 @@ public final class JsonParser {
      *         the last token is an integer and it is out of primitive {@code long} range:
      *         greater than {@code Long.MAX_VALUE} or lesser than {@code Long.MIN_VALUE}
      * @throws IllegalStateException if parsing was cancelled or any exception was thrown
-     *         in {@link #parse(net.openhft.lang.io.Bytes)} call after
+     *         in {@link #parse(Bytes)} call after
      *         the previous {@link #reset()} call or parser construction
      */
     public boolean finish() {
@@ -357,16 +358,17 @@ public final class JsonParser {
 
     private Bytes finishSpace() {
         if (finishSpace == null) {
-            return finishSpace = new ByteBufferBytes(ByteBuffer.wrap(new byte[] {' '}));
+            finishSpace = Bytes.from(" ");
         }
-        return finishSpace.clear();
+        finishSpace.readPosition(0);
+        return finishSpace;
     }
 
     /**
      * Parses a portion of JSON from the given {@code Bytes} from it's
-     * {@link net.openhft.lang.io.Bytes#position() position} to
-     * {@link net.openhft.lang.io.Bytes#limit() limit}. Position is incremented until there are
-     * no {@link net.openhft.lang.io.Bytes#remaining() remaining} bytes or a single top-level
+     * {@link Bytes#readPosition()}  position} to
+     * {@link Bytes#readLimit()}  limit}. Position is incremented until there are
+     * no {@link Bytes#readRemaining()}  remaining} bytes or a single top-level
      * JSON object is parsed and {@link JsonParserTopLevelStrategy#ALLOW_TRAILING_GARBAGE} is set.
      *
      * <p>As this is a pull parser, the given JSON text may break at any character. If the
@@ -402,7 +404,7 @@ public final class JsonParser {
     public boolean parse(Bytes jsonText) {
         TokenType tok;
 
-        long startOffset = jsonText.position();
+        long startOffset = jsonText.readPosition();
 
         around_again:
         while (true) {
@@ -413,7 +415,7 @@ public final class JsonParser {
                         continue around_again;
                     }
                     if (topLevelStrategy != ALLOW_TRAILING_GARBAGE) {
-                        if (jsonText.remaining() > 0) {
+                        if (jsonText.readRemaining() > 0) {
                             tok = lexer.lex(jsonText);
                             if (tok != EOF) {
                                 return parseError("trailing garbage");
@@ -813,12 +815,12 @@ public final class JsonParser {
     }
 
     private void tryRestoreErrorEffect(Bytes jsonText, long startOffset) {
-        long pos = jsonText.position();
+        long pos = jsonText.readPosition();
         if (pos - startOffset >= lexer.outLen) {
-            jsonText.position(pos - lexer.outLen);
+            jsonText.readPosition(pos - lexer.outLen);
 
         } else {
-            jsonText.position(startOffset);
+            jsonText.readPosition(startOffset);
         }
     }
 }

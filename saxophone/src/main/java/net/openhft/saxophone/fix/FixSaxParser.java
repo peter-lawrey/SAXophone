@@ -18,7 +18,7 @@
 
 package net.openhft.saxophone.fix;
 
-import net.openhft.lang.io.Bytes;
+import net.openhft.chronicle.bytes.Bytes;
 import net.openhft.saxophone.BytesSaxParser;
 
 public class FixSaxParser implements BytesSaxParser {
@@ -35,32 +35,27 @@ public class FixSaxParser implements BytesSaxParser {
 
     @Override
     public void parse(Bytes bytes) {
-        long limit = bytes.limit(), limit2 = limit;
-        while (limit2 > bytes.position() && bytes.readByte(limit2 - 1) != FIELD_TERMINATOR)
+        long limit = bytes.readLimit(), limit2 = limit;
+        while (limit2 > bytes.readPosition() && bytes.readByte(limit2 - 1) != FIELD_TERMINATOR)
             limit2--;
-        bytes.limit(limit2);
-        boolean tmpSelf = bytes.selfTerminating();
-        try {
-            bytes.selfTerminating(true);
-            while (bytes.remaining() > 0) {
-                long fieldNum = bytes.parseLong();
-                long pos = bytes.position();
+        bytes.readLimit(limit2);
 
-                searchForTheEndOfField(bytes);
+        while (bytes.readRemaining() > 0) {
+            long fieldNum = bytes.parseLong();
+            long pos = bytes.readPosition();
 
-                long end = bytes.position() - 1;
-                bytes.limit(end);
-                bytes.position(pos);
-                handler.onField(fieldNum, bytes);
+            searchForTheEndOfField(bytes);
 
-                bytes.limit(limit);
-                bytes.position(end + 1);
-            }
-            bytes.limit(limit);
-            bytes.position(limit2);
-        } finally {
-            bytes.selfTerminating(tmpSelf);
+            long end = bytes.readPosition() - 1;
+            bytes.readLimit(end);
+            bytes.readPosition(pos);
+            handler.onField(fieldNum, bytes);
+
+            bytes.readLimit(limit);
+            bytes.readPosition(end + 1);
         }
+        bytes.readLimit(limit);
+        bytes.readPosition(limit2);
     }
 
     private void searchForTheEndOfField(Bytes bytes) {

@@ -18,10 +18,12 @@
 
 package net.openhft.saxophone.fix;
 
-import net.openhft.lang.io.*;
+import net.openhft.chronicle.bytes.Bytes;
+import net.openhft.chronicle.bytes.NativeBytes;
+import net.openhft.chronicle.bytes.NativeBytesStore;
+import net.openhft.chronicle.bytes.StopCharTesters;
 import org.junit.Test;
 
-import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
@@ -30,14 +32,9 @@ public class FixSaxParserTest {
     @Test
     public void testParseSingleOrder() {
         String s = "8=FIX.4.2|9=130|35=D|34=659|49=BROKER04|56=REUTERS|52=20070123-19:09:43|38=1000|59=1|100=N|40=1|11=ORD10001|60=20070123-19:01:17|55=HPQ|54=1|21=2|10=004|";
-        ByteBufferBytes bbb = new ByteBufferBytes(ByteBuffer.wrap(s.replace('|', '\u0001').getBytes()));
+        Bytes bbb = Bytes.from(s.replace('|', '\u0001'));
         final StringBuilder sb = new StringBuilder();
-        FixSaxParser parser = new FixSaxParser(new FixHandler() {
-            @Override
-            public void onField(long fieldNumber, Bytes value) {
-                sb.append(fieldNumber).append("=").append(value.asString()).append("|");
-            }
-        });
+        FixSaxParser parser = new FixSaxParser((fieldNumber, value) -> sb.append(fieldNumber).append("=").append(value.toString()).append("|"));
         parser.parse(bbb);
         assertEquals(s, sb.toString());
     }
@@ -45,10 +42,7 @@ public class FixSaxParserTest {
     @Test
     public void timeParseSingleOrder() {
         String s = "8=FIX.4.2|9=130|35=D|34=659|49=BROKER04|56=REUTERS|52=20070123-19:09:43|38=1000|59=1|100=N|40=1|11=ORD10001|60=20070123-19:01:17|55=HPQ|54=1|21=2|10=004|";
-//        ByteBufferBytes nb = new ByteBufferBytes(ByteBuffer.wrap(s.replace('|', '\u0001').getBytes()));
-        NativeBytes nb = new DirectStore(s.length()).bytes();
-        nb.append(s.replace('|', '\u0001'));
-        nb.flip();
+        Bytes nb = Bytes.from(s.replace('|', '\u0001'));
 
         final AtomicInteger count = new AtomicInteger();
         FixSaxParser parser = new FixSaxParser(new MyFixHandler(count));
@@ -57,7 +51,7 @@ public class FixSaxParserTest {
             count.set(0);
             long start = System.nanoTime();
             for (int i = 0; i < runs; i++) {
-                nb.position(0);
+                nb.readPosition(0);
                 parser.parse(nb);
             }
             long time = System.nanoTime() - start;

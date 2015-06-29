@@ -18,9 +18,9 @@
 
 package net.openhft.saxophone.json;
 
-import net.openhft.lang.model.constraints.NotNull;
-import net.openhft.lang.model.constraints.Nullable;
 import net.openhft.saxophone.json.handler.*;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Collections;

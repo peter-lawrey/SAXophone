@@ -18,7 +18,8 @@
 
 package net.openhft.saxophone;
 
-import net.openhft.lang.io.Bytes;
+
+import net.openhft.chronicle.bytes.Bytes;
 
 public interface BytesSaxParser {
     /**
