@@ -41,7 +41,7 @@ public interface NumberHandler extends JsonHandlerBase {
      * @param number the number value as a {@code CharSequence}
      * @return {@code true} if the parsing should be continued, {@code false} if it should be
      *         stopped immediately
-     * @throws Exception if an error occurred during handling
+     * @  if an error occurred during handling
      */
-    boolean onNumber(CharSequence number) throws Exception;
+    boolean onNumber(CharSequence number)  ;
 }

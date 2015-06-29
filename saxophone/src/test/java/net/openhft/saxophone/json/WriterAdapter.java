@@ -36,61 +36,61 @@ final class WriterAdapter implements ObjectStartHandler, ObjectEndHandler,
     }
 
     @Override
-    public boolean onArrayEnd() throws Exception {
+    public boolean onArrayEnd()   {
         writer.endArray();
         return true;
     }
 
     @Override
-    public boolean onArrayStart() throws Exception {
+    public boolean onArrayStart()   {
         writer.beginArray();
         return true;
     }
 
     @Override
-    public boolean onBoolean(boolean value) throws Exception {
+    public boolean onBoolean(boolean value)   {
         writer.value(value);
         return true;
     }
 
     @Override
-    public boolean onFloating(double value) throws Exception {
+    public boolean onFloating(double value)   {
         writer.value(value);
         return true;
     }
 
     @Override
-    public boolean onInteger(long value) throws Exception {
+    public boolean onInteger(long value)   {
         writer.value(value);
         return true;
     }
 
     @Override
-    public boolean onNull() throws Exception {
+    public boolean onNull()   {
         writer.nullValue();
         return true;
     }
 
     @Override
-    public boolean onObjectEnd() throws Exception {
+    public boolean onObjectEnd()   {
         writer.endObject();
         return true;
     }
 
     @Override
-    public boolean onObjectKey(CharSequence key) throws Exception {
+    public boolean onObjectKey(CharSequence key)   {
         writer.name(key.toString());
         return true;
     }
 
     @Override
-    public boolean onObjectStart() throws Exception {
+    public boolean onObjectStart()   {
         writer.beginObject();
         return true;
     }
 
     @Override
-    public boolean onStringValue(CharSequence value) throws Exception {
+    public boolean onStringValue(CharSequence value)   {
         writer.value(value.toString());
         return true;
     }

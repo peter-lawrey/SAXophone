@@ -29,7 +29,7 @@ public interface ArrayStartHandler extends JsonHandlerBase {
      *
      * @return {@code true} if the parsing should be continued, {@code false} if it should be
      *         stopped immediately
-     * @throws Exception if an error occurred during handling
+     * @  if an error occurred during handling
      */
-    boolean onArrayStart() throws Exception;
+    boolean onArrayStart()  ;
 }

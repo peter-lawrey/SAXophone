@@ -30,7 +30,7 @@ public interface ObjectKeyHandler extends JsonHandlerBase {
      * @param key the object key
      * @return {@code true} if the parsing should be continued, {@code false} if it should be
      *         stopped immediately
-     * @throws Exception if an error occurred during handling
+     * @  if an error occurred during handling
      */
-    boolean onObjectKey(CharSequence key) throws Exception;
+    boolean onObjectKey(CharSequence key)  ;
 }

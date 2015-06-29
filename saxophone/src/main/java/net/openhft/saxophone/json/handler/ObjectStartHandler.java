@@ -29,7 +29,7 @@ public interface ObjectStartHandler extends JsonHandlerBase {
      *
      * @return {@code true} if the parsing should be continued, {@code false} if it should be
      *         stopped immediately
-     * @throws Exception if an error occurred during handling
+     * @  if an error occurred during handling
      */
-    boolean onObjectStart() throws Exception;
+    boolean onObjectStart()  ;
 }
