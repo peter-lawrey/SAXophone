@@ -18,6 +18,8 @@
 
 package net.openhft.saxophone.json.handler;
 
+import java.io.IOException;
+
 /**
  * Triggered on JSON array, object or standalone (top-level) integer number value: for example,
  * {@code `-1`},{@code `0`} or {@code `9223372036854775807`}.
@@ -42,5 +44,5 @@ public interface IntegerHandler extends JsonHandlerBase {
      *         stopped immediately
      * @  if an error occurred during handling
      */
-    boolean onInteger(long value)  ;
+    boolean onInteger(long value) throws IOException;
 }

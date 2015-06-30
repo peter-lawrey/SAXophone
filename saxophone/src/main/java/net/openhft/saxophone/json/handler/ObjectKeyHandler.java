@@ -18,6 +18,8 @@
 
 package net.openhft.saxophone.json.handler;
 
+import java.io.IOException;
+
 /**
  * Triggered on JSON object key: for example, {@code `"foo"`} or {@code `""`}.
  *
@@ -32,5 +34,5 @@ public interface ObjectKeyHandler extends JsonHandlerBase {
      *         stopped immediately
      * @  if an error occurred during handling
      */
-    boolean onObjectKey(CharSequence key)  ;
+    boolean onObjectKey(CharSequence key) throws IOException;
 }

@@ -18,6 +18,8 @@
 
 package net.openhft.saxophone.json.handler;
 
+import java.io.IOException;
+
 /**
  * Triggered on JSON array, object or standalone (top-level) string value: for example,
  * {@code `"foo"`} or {@code `""`}.
@@ -34,5 +36,5 @@ public interface StringValueHandler extends JsonHandlerBase {
      *         stopped immediately
      * @  if an error occurred during handling
      */
-    boolean onStringValue(CharSequence value)  ;
+    boolean onStringValue(CharSequence value) throws IOException;
 }

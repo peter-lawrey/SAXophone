@@ -18,6 +18,8 @@
 
 package net.openhft.saxophone.json.handler;
 
+import java.io.IOException;
+
 /**
  * Triggered on JSON object end brace: {@code `}`}.
  *
@@ -31,5 +33,5 @@ public interface ObjectEndHandler extends JsonHandlerBase {
      *         stopped immediately
      * @  if an error occurred during handling
      */
-    boolean onObjectEnd()  ;
+    boolean onObjectEnd() throws IOException;
 }

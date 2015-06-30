@@ -18,6 +18,8 @@
 
 package net.openhft.saxophone.json.handler;
 
+import java.io.IOException;
+
 /**
  * Triggered on JSON array, object or standalone (top-level) boolean value:
  * {@code `true`} or {@code `false`}.
@@ -34,5 +36,5 @@ public interface BooleanHandler extends JsonHandlerBase {
      *         stopped immediately
      * @  if an error occurred during handling
      */
-    boolean onBoolean(boolean value)  ;
+    boolean onBoolean(boolean value) throws IOException;
 }

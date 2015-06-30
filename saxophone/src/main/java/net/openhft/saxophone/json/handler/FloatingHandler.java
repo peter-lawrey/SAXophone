@@ -18,6 +18,8 @@
 
 package net.openhft.saxophone.json.handler;
 
+import java.io.IOException;
+
 /**
  * Triggered on JSON array, object or standalone (top-level) floating number value: for example,
  * {@code `3.14`} or {@code `9.223372E-18`}.
@@ -41,5 +43,5 @@ public interface FloatingHandler extends JsonHandlerBase {
      *         stopped immediately
      * @  if an error occurred during handling
      */
-    boolean onFloating(double value)  ;
+    boolean onFloating(double value) throws IOException;
 }

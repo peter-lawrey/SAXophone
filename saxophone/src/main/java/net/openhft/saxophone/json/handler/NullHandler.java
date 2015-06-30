@@ -18,6 +18,8 @@
 
 package net.openhft.saxophone.json.handler;
 
+import java.io.IOException;
+
 /**
  * Triggered on JSON array, object or standalone (top-level) null value: {@code `null`}.
  *
@@ -31,5 +33,5 @@ public interface NullHandler extends JsonHandlerBase {
      *         stopped immediately
      * @  if an error occurred during handling
      */
-    boolean onNull()  ;
+    boolean onNull() throws IOException;
 }

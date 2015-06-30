@@ -36,61 +36,61 @@ final class WriterAdapter implements ObjectStartHandler, ObjectEndHandler,
     }
 
     @Override
-    public boolean onArrayEnd()   {
+    public boolean onArrayEnd() throws IOException {
         writer.endArray();
         return true;
     }
 
     @Override
-    public boolean onArrayStart()   {
+    public boolean onArrayStart() throws IOException {
         writer.beginArray();
         return true;
     }
 
     @Override
-    public boolean onBoolean(boolean value)   {
+    public boolean onBoolean(boolean value) throws IOException {
         writer.value(value);
         return true;
     }
 
     @Override
-    public boolean onFloating(double value)   {
+    public boolean onFloating(double value) throws IOException {
         writer.value(value);
         return true;
     }
 
     @Override
-    public boolean onInteger(long value)   {
+    public boolean onInteger(long value) throws IOException {
         writer.value(value);
         return true;
     }
 
     @Override
-    public boolean onNull()   {
+    public boolean onNull() throws IOException {
         writer.nullValue();
         return true;
     }
 
     @Override
-    public boolean onObjectEnd()   {
+    public boolean onObjectEnd() throws IOException {
         writer.endObject();
         return true;
     }
 
     @Override
-    public boolean onObjectKey(CharSequence key)   {
+    public boolean onObjectKey(CharSequence key) throws IOException {
         writer.name(key.toString());
         return true;
     }
 
     @Override
-    public boolean onObjectStart()   {
+    public boolean onObjectStart() throws IOException {
         writer.beginObject();
         return true;
     }
 
     @Override
-    public boolean onStringValue(CharSequence value)   {
+    public boolean onStringValue(CharSequence value) throws IOException {
         writer.value(value.toString());
         return true;
     }

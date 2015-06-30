@@ -24,6 +24,7 @@ import net.openhft.saxophone.ParseException;
 import net.openhft.saxophone.json.handler.*;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.EnumSet;
 
@@ -144,7 +145,7 @@ public final class JsonParser {
     @Nullable private final ResetHook resetHook;
 
     private class OnString {
-        boolean on()   {
+        boolean on() throws IOException {
             Bytes buf = lexer.outBuf;
             long bufPos = lexer.outPos;
             long bufLen = lexer.outLen;
@@ -171,7 +172,7 @@ public final class JsonParser {
             return buf;
         }
 
-        boolean apply(CharSequence value)   {
+        boolean apply(CharSequence value) throws IOException {
             assert stringValueHandler != null;
             return stringValueHandler.onStringValue(value);
         }
@@ -186,21 +187,21 @@ public final class JsonParser {
         }
     }
 
-    private boolean applyKey(CharSequence key)   {
+    private boolean applyKey(CharSequence key) throws IOException {
         assert objectKeyHandler != null;
         return objectKeyHandler.onObjectKey(key);
     }
 
     private class OnKey extends OnString {
         @Override
-        boolean apply(CharSequence key)   {
+        boolean apply(CharSequence key) throws IOException {
             return applyKey(key);
         }
     }
 
     private class OnEscapedKey extends OnEscapedString {
         @Override
-        boolean apply(CharSequence key)   {
+        boolean apply(CharSequence key) throws IOException {
             return applyKey(key);
         }
     }
@@ -215,7 +216,7 @@ public final class JsonParser {
 
     private class OnFloating extends OnString {
         @Override
-        boolean apply(CharSequence number)   {
+        boolean apply(CharSequence number) throws IOException {
             assert floatingHandler != null;
             // TODO optimize, get rid of toString() conversion
             return floatingHandler.onFloating(Double.parseDouble(number.toString()));
