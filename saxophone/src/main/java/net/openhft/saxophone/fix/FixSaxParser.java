@@ -49,11 +49,13 @@ public class FixSaxParser implements BytesSaxParser {
             long end = bytes.readPosition() - 1;
             bytes.readLimit(end);
             bytes.readPosition(pos);
+            handler.completeMessage(bytes);
             handler.onField(fieldNum, bytes);
 
             bytes.readLimit(limit);
             bytes.readPosition(end + 1);
         }
+
         bytes.readLimit(limit);
         bytes.readPosition(limit2);
     }

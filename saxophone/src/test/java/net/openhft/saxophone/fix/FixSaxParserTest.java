@@ -34,8 +34,18 @@ public class FixSaxParserTest {
         String s = "8=FIX.4.2|9=130|35=D|34=659|49=BROKER04|56=REUTERS|52=20070123-19:09:43|38=1000|59=1|100=N|40=1|11=ORD10001|60=20070123-19:01:17|55=HPQ|54=1|21=2|10=004|";
         Bytes bbb = Bytes.from(s.replace('|', '\u0001'));
         final StringBuilder sb = new StringBuilder();
-        FixSaxParser parser = new FixSaxParser((fieldNumber, value) -> sb.append(fieldNumber).append("=").append(value.toString()).append("|"));
-        parser.parse(bbb);
+        FixSaxParser parser = new FixSaxParser(new FixHandler() {
+            @Override
+            public void onField(long fieldNumber, Bytes value) {
+                sb.append(fieldNumber).append("=")
+                        .append(value.toString()).append("|");
+            }
+
+            @Override
+            public void completeMessage(Bytes bytes) {
+
+            }
+        });parser.parse(bbb);
         assertEquals(s, sb.toString());
     }
 
@@ -121,6 +131,11 @@ public class FixSaxParserTest {
                     break;
             }
             count.incrementAndGet();
+        }
+
+        @Override
+        public void completeMessage(Bytes bytes) {
+
         }
 
         private void resetAll() {
