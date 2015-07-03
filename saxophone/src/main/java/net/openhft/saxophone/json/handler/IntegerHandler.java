@@ -42,7 +42,7 @@ public interface IntegerHandler extends JsonHandlerBase {
      * @param value the integer value as {@code long}
      * @return {@code true} if the parsing should be continued, {@code false} if it should be
      *         stopped immediately
-     * @  if an error occurred during handling
+     * @throws IOException  if an error occurred during handling
      */
     boolean onInteger(long value) throws IOException;
 }

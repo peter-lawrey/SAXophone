@@ -18,6 +18,8 @@
 
 package net.openhft.saxophone.json;
 
+import net.openhft.chronicle.bytes.Bytes;
+
 /**
  * {@link JsonParser} strategies of treating of top-level JSON objects in the input and throwing
  * {@link net.openhft.saxophone.ParseException ParseExceptions}.
@@ -37,8 +39,8 @@ public enum JsonParserTopLevelStrategy {
     ALLOW_JUST_A_SINGLE_OBJECT,
     /**
      * After parsing a single top-level JSON object
-     * {@link JsonParser#parse(net.openhft.lang.io.Bytes)} returns {@code true} and the (last)
-     * input {@code Bytes} might have some {@link net.openhft.lang.io.Bytes#remaining() remaining}
+     * {@link JsonParser#parse(Bytes)} returns {@code true} and the (last)
+     * input {@code Bytes} might have some {@link Bytes#readRemaining() remaining}
      * bytes.
      *
      * <p>This option is useful when you are parsing multiple JSON objects from the stream (see
