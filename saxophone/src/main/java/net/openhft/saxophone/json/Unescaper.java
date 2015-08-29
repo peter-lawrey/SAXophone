@@ -29,6 +29,9 @@ import net.openhft.chronicle.bytes.Bytes;
  */
 final class Unescaper {
 
+    private Unescaper() {
+    }
+
     private static char hexToDigit(Bytes hex, long pos) {
         int val = 0;
         for (int i = 0; i < 4; i++) {
@@ -49,7 +52,7 @@ final class Unescaper {
         char codePoint;
         while (end < len) {
             if (str.readUnsignedByte(end) == '\\') {
-                buf.append(str, beg, (int) (end - pos));
+                buf.append(str, beg, (int) (beg + end - pos));
                 switch (str.readUnsignedByte(++end)) {
                     case 'r': codePoint = '\r'; break;
 
@@ -83,8 +86,6 @@ final class Unescaper {
                 end++;
             }
         }
-        buf.append(str, beg, (int) (end - pos));
+        buf.append(str, beg, (int) (beg + end - pos));
     }
-
-    private Unescaper() {}
 }
