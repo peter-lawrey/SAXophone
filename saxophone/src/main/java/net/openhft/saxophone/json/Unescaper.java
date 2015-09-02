@@ -45,7 +45,7 @@ final class Unescaper {
     }
 
     static void decode(StringBuilder buf, Bytes str) {
-        long len = str.readLimit();
+        long len = str.readRemaining();
         long pos = str.readPosition();
         int beg = 0;
         long end = pos;
