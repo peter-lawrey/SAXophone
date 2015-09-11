@@ -30,7 +30,6 @@ public enum JsonParserOption {
     /**
      * Porting note: this enum corresponds to yajl_option enum from src/api/yajl_parse.h in YAJL.
      */
-
     /**
      * Ignore JavaScript-style comments present in JSON input. Non-standard, but rather fun.
      *

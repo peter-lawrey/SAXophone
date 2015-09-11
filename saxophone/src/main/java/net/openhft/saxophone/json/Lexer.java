@@ -51,7 +51,6 @@ final class Lexer {
      * readChar's responsibility is to handle pulling all chars from the buffer
      * before pulling chars from input text
      */
-
     /* a lookup table which lets us quickly determine three things:
      * VEC - valid escaped control char
      * note.  the solidus '/' may be escaped or not.
@@ -111,24 +110,20 @@ final class Lexer {
     private static final char[] RUE_CHARS = new char[] {'r', 'u', 'e'};
     private static final char[] ALSE_CHARS = new char[] {'a', 'l', 's', 'e'};
     private static final char[] ULL_CHARS = new char[] {'u', 'l', 'l'};
-
-    LexError error;
-
     /** a input buffer to handle the case where a token is spread over multiple chunks */
     private final Bytes buf = Bytes.elasticByteBuffer();
-
-    /** are we using the lex buf? */
-    private boolean bufInUse;
-
     private final boolean allowComments;
-
     /** shall we validate utf8 inside strings? */
     private final boolean validateUTF8;
-
+    LexError error;
     /** Emulating out parameters of lex() method. */
     Bytes outBuf;
     long outPos;
     long outLen;
+    /**
+     * are we using the lex buf?
+     */
+    private boolean bufInUse;
 
     Lexer(boolean allowComments, boolean validateUTF8) {
         this.allowComments = allowComments;
@@ -324,7 +319,6 @@ final class Lexer {
         /** XXX: numbers are the only entities in json that we must lex
          *       _beyond_ in order to know that they are complete.  There
          *       is an ambiguous case for integers at EOF. */
-
         int c;
 
         TokenType tok = INTEGER;

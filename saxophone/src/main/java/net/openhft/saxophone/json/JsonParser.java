@@ -19,13 +19,11 @@
 package net.openhft.saxophone.json;
 
 import net.openhft.chronicle.bytes.Bytes;
-import net.openhft.chronicle.bytes.NativeBytesStore;
 import net.openhft.saxophone.ParseException;
 import net.openhft.saxophone.json.handler.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.EnumSet;
 
 import static net.openhft.saxophone.json.JsonParserOption.*;
@@ -106,30 +104,13 @@ public final class JsonParser {
      *
      * I tried to preserve method order and names to ease side-to-side comparison.
      */
-
-    /**
-     * Return a new parser builder.
-     *
-     * <p>There are no public constructors of {@code JsonParser} at the moment, and likely won't
-     * be, so configuring a builder and then call {@link JsonParserBuilder#build()}
-     * is the only way to construct the parser.
-     *
-     * @return a new parser builder
-     */
-    public static JsonParserBuilder builder() {
-        return new JsonParserBuilder();
-    }
-
     private final Lexer lexer;
-    String parseError;
     /** temporary storage for decoded strings */
     private final StringBuilder decodeBuf = new StringBuilder();
     private final ParserState.Stack stateStack;
     private final EnumSet<JsonParserOption> flags;
     private final JsonParserTopLevelStrategy topLevelStrategy;
     private final boolean eachTokenMustBeHandled;
-    private Bytes finishSpace;
-
     @Nullable
     private final ObjectStartHandler objectStartHandler;
     @Nullable private final ObjectEndHandler objectEndHandler;
@@ -143,92 +124,14 @@ public final class JsonParser {
     @Nullable private final IntegerHandler integerHandler;
     @Nullable private final FloatingHandler floatingHandler;
     @Nullable private final ResetHook resetHook;
-
-    private class OnString {
-        boolean on() throws IOException {
-            Bytes buf = lexer.outBuf;
-            long bufPos = lexer.outPos;
-            long bufLen = lexer.outLen;
-            boolean borrowBuf = buf.readPosition() != bufPos ||
-                    buf.readRemaining() != bufLen;
-            long pos = 0, lim = 0;
-            if (borrowBuf) {
-                pos = buf.readPosition();
-                lim = buf.readLimit();
-                //buf.clear();
-                buf.readLimit(bufPos + bufLen);
-                buf.readPosition(bufPos);
-            }
-            boolean go = apply(value(buf));
-            if (borrowBuf) {
-                //buf.clear();
-                buf.readLimit(lim);
-                buf.readPosition(pos);
-            }
-            return go;
-        }
-
-        CharSequence value(Bytes buf) {
-            return buf;
-        }
-
-        boolean apply(CharSequence value) throws IOException {
-            assert stringValueHandler != null;
-            return stringValueHandler.onStringValue(value);
-        }
-    }
-
-    private class OnEscapedString extends OnString {
-        @Override
-        CharSequence value(Bytes buf) {
-            decodeBuf.setLength(0);
-            Unescaper.decode(decodeBuf, buf);
-            return decodeBuf;
-        }
-    }
-
-    private boolean applyKey(CharSequence key) throws IOException {
-        assert objectKeyHandler != null;
-        return objectKeyHandler.onObjectKey(key);
-    }
-
-    private class OnKey extends OnString {
-        @Override
-        boolean apply(CharSequence key) throws IOException {
-            return applyKey(key);
-        }
-    }
-
-    private class OnEscapedKey extends OnEscapedString {
-        @Override
-        boolean apply(CharSequence key) throws IOException {
-            return applyKey(key);
-        }
-    }
-
-    private class OnNumber extends OnString {
-        @Override
-        boolean apply(CharSequence number)   {
-            assert numberHandler != null;
-            return numberHandler.onNumber(number);
-        }
-    }
-
-    private class OnFloating extends OnString {
-        @Override
-        boolean apply(CharSequence number) throws IOException {
-            assert floatingHandler != null;
-            // TODO optimize, get rid of toString() conversion
-            return floatingHandler.onFloating(Double.parseDouble(number.toString()));
-        }
-    }
-
     private final OnString onString = new OnString();
     private final OnEscapedString onEscapedString = new OnEscapedString();
     private final OnKey onKey = new OnKey();
     private final OnEscapedKey onEscapedKey = new OnEscapedKey();
     private final OnNumber onNumber = new OnNumber();
     private final OnFloating onFloating = new OnFloating();
+    String parseError;
+    private Bytes finishSpace;
 
     JsonParser(EnumSet<JsonParserOption> flags,
                JsonParserTopLevelStrategy topLevelStrategy,
@@ -264,6 +167,24 @@ public final class JsonParser {
         lexer = new Lexer(flags.contains(ALLOW_COMMENTS), !flags.contains(DONT_VALIDATE_STRINGS));
         stateStack = new Stack();
         reset();
+    }
+
+    /**
+     * Return a new parser builder.
+     *
+     * <p>There are no public constructors of {@code JsonParser} at the moment, and likely won't
+     * be, so configuring a builder and then call {@link JsonParserBuilder#build()}
+     * is the only way to construct the parser.
+     *
+     * @return a new parser builder
+     */
+    public static JsonParserBuilder builder() {
+        return new JsonParserBuilder();
+    }
+
+    private boolean applyKey(CharSequence key) throws IOException {
+        assert objectKeyHandler != null;
+        return objectKeyHandler.onObjectKey(key);
     }
 
     /**
@@ -443,7 +364,6 @@ public final class JsonParser {
                      * entity, the state at this level will not matter.
                      * a state that needs pushing will be anything other
                      * than state_start */
-
                     byte stateToPush = START;
 
                     tok = lexer.lex(jsonText);
@@ -822,6 +742,80 @@ public final class JsonParser {
 
         } else {
             jsonText.readPosition(startOffset);
+        }
+    }
+
+    private class OnString {
+        boolean on() throws IOException {
+            Bytes buf = lexer.outBuf;
+            long bufPos = lexer.outPos;
+            long bufLen = lexer.outLen;
+            boolean borrowBuf = buf.readPosition() != bufPos ||
+                    buf.readRemaining() != bufLen;
+            long pos = 0, lim = 0;
+            if (borrowBuf) {
+                pos = buf.readPosition();
+                lim = buf.readLimit();
+                //buf.clear();
+                buf.readLimit(bufPos + bufLen);
+                buf.readPosition(bufPos);
+            }
+            boolean go = apply(value(buf));
+            if (borrowBuf) {
+                //buf.clear();
+                buf.readLimit(lim);
+                buf.readPosition(pos);
+            }
+            return go;
+        }
+
+        CharSequence value(Bytes buf) {
+            return buf;
+        }
+
+        boolean apply(CharSequence value) throws IOException {
+            assert stringValueHandler != null;
+            return stringValueHandler.onStringValue(value);
+        }
+    }
+
+    private class OnEscapedString extends OnString {
+        @Override
+        CharSequence value(Bytes buf) {
+            decodeBuf.setLength(0);
+            Unescaper.decode(decodeBuf, buf);
+            return decodeBuf;
+        }
+    }
+
+    private class OnKey extends OnString {
+        @Override
+        boolean apply(CharSequence key) throws IOException {
+            return applyKey(key);
+        }
+    }
+
+    private class OnEscapedKey extends OnEscapedString {
+        @Override
+        boolean apply(CharSequence key) throws IOException {
+            return applyKey(key);
+        }
+    }
+
+    private class OnNumber extends OnString {
+        @Override
+        boolean apply(CharSequence number) {
+            assert numberHandler != null;
+            return numberHandler.onNumber(number);
+        }
+    }
+
+    private class OnFloating extends OnString {
+        @Override
+        boolean apply(CharSequence number) throws IOException {
+            assert floatingHandler != null;
+            // TODO optimize, get rid of toString() conversion
+            return floatingHandler.onFloating(Double.parseDouble(number.toString()));
         }
     }
 }
