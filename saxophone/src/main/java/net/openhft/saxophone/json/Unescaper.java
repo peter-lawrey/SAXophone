@@ -18,7 +18,6 @@
 
 package net.openhft.saxophone.json;
 
-
 import net.openhft.chronicle.bytes.Bytes;
 
 /**

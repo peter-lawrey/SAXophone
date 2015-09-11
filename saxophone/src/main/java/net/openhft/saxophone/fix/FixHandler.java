@@ -18,7 +18,6 @@
 
 package net.openhft.saxophone.fix;
 
-
 import net.openhft.chronicle.bytes.Bytes;
 
 public interface FixHandler {
@@ -29,7 +28,6 @@ public interface FixHandler {
      * @param value       to be ignored, parsed or copied.
      */
     void onField(long fieldNumber, Bytes value);
-
 
     void completeMessage(Bytes bytes);
 }
