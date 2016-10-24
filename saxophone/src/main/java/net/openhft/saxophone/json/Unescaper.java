@@ -49,9 +49,9 @@ final class Unescaper {
         int beg = 0;
         long end = pos;
         char codePoint;
-        while (end < len) {
+        while (end < (pos + len)) {
             if (str.readUnsignedByte(end) == '\\') {
-                buf.append(str, beg, (int) (beg + end - pos));
+                buf.append(str, beg, (int) (end - pos));
                 switch (str.readUnsignedByte(++end)) {
                     case 'r': codePoint = '\r'; break;
 
@@ -85,6 +85,6 @@ final class Unescaper {
                 end++;
             }
         }
-        buf.append(str, beg, (int) (beg + end - pos));
+        buf.append(str, beg, (int) (end - pos));
     }
 }
