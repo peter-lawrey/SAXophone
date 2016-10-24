@@ -99,7 +99,6 @@ public final class JsonParserTest {
         test("\"\""); // empty
     }
 
-    @Ignore
     @Test
     public void testEscape() {
         test("\" \\n \\t \\\" \\f \\r \\/ \\\\ \\b \"");
